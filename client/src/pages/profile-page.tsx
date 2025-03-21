@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, User, Mail, MessageSquare, MessagesSquare } from "lucide-react";
+import { useLocation } from "wouter";
+import { Loader2, User, Mail, MessageSquare, MessagesSquare, Upload } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ProfilePage() {
   const { user, isLoading, updateProfileMutation } = useAuth();
+  const [_, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<string>("profile");
   
   const [profileForm, setProfileForm] = useState({
@@ -197,7 +199,11 @@ export default function ProfilePage() {
                 <p className="text-muted-foreground mt-1">
                   You haven't uploaded any scripts yet. Upload your first script to see it here.
                 </p>
-                <Button className="mt-4">
+                <Button 
+                  className="mt-4"
+                  onClick={() => setLocation("/upload")}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
                   Upload a Script
                 </Button>
               </div>
