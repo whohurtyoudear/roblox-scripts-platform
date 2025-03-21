@@ -107,7 +107,7 @@ export default function UploadScriptPage() {
       gameType: formState.gameType!,
       imageUrl: formState.imageUrl!,
       discordLink: formState.discordLink || undefined,
-      lastUpdated: new Date()
+      lastUpdated: new Date().toISOString()
     };
     
     uploadMutation.mutate(scriptData);
