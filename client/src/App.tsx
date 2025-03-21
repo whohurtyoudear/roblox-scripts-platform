@@ -4,10 +4,13 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
+import AuthPage from "@/pages/auth-page";
 import { useState } from "react";
 import { Script } from "@shared/schema";
 import ScriptDetailModal from "./components/ScriptDetailModal";
 import Notification from "./components/Notification";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 function Router() {
   const [selectedScript, setSelectedScript] = useState<Script | null>(null);
@@ -38,12 +41,16 @@ function Router() {
   return (
     <>
       <Switch>
-        <Route path="/">
-          <Home 
-            onScriptDetail={openScriptDetail} 
-            showNotification={showNotification}
-          />
-        </Route>
+        <ProtectedRoute 
+          path="/" 
+          component={() => (
+            <Home 
+              onScriptDetail={openScriptDetail} 
+              showNotification={showNotification}
+            />
+          )} 
+        />
+        <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
       </Switch>
       
@@ -66,8 +73,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <AuthProvider>
+        <Router />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

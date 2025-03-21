@@ -112,11 +112,12 @@ export class MemStorage implements IStorage {
     const hashedPassword = await hashPassword(userData.password);
     
     const user: User = {
-      ...userData,
       id,
+      username: userData.username,
       password: hashedPassword,
-      createdAt: new Date(),
+      email: userData.email || null,
       avatarUrl: userData.avatarUrl || "/images/default-avatar.png",
+      createdAt: new Date(),
       bio: userData.bio || "",
       discordUsername: userData.discordUsername || null
     };
