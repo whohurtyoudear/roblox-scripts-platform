@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEVSCRIPTS - Roblox Scripts</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/webp" href="https://rscripts.net/assets/avatars/67a015a309a084ca96213b24_1738544633705_08nikuGBjy.webp">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-R25BBEYTR1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-R25BBEYTR1');
+    </script>
+    <style>
+        /* All existing CSS styles remain unchanged */
+        :root {
+            --primary: #6366f1;
+            --secondary: #4f46e5;
+            --background: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        header {
+            background-color: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 4rem 1rem;
+            background: linear-gradient(to bottom, #1e1b4b, #312e81);
+            margin-bottom: 2rem;
+        }
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #a5b4fc, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            color: var(--text);
+            border: 1px solid var(--text-secondary);
+        }
+        
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .search-bar {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+            padding: 0 1rem;
+        }
+        
+        .search-bar input {
+            width: 100%;
+            max-width: 400px;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--text-secondary);
+            background-color: var(--card-bg);
+            color: var(--text);
+            font-size: 1rem;
+        }
+        
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .scripts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem 1rem;
+        }
+        
+        .script-card {
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .script-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .script-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .script-content {
+            padding: 1.5rem;
+        }
+        
+        .script-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        
+        .script-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 4.5em;
+        }
+        
+        .script-code {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #a5b4fc;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            position: relative;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: rgba(79, 70, 229, 0.2);
+            color: #a5b4fc;
+            border: none;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: background-color 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background-color: rgba(79, 70, 229, 0.4);
+        }
+        
+        .script-footer {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .discord-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: #5865F2;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        
+        .discord-link:hover {
+            background-color: #4752c4;
+        }
+        
+        footer {
+            background-color: rgba(17, 24, 39, 0.8);
+            padding: 2rem 1rem;
+            margin-top: 3rem;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+        
+        .copyright {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            display: none;
+            transition: background-color 0.3s;
+        }
+        
+        .back-to-top:hover {
+            background-color: var(--secondary);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            max-width: 800px;
+            width: 90%;
+            position: relative;
+            animation: modalOpen 0.3s ease-out;
+        }
+        
+        @keyframes modalOpen {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close-modal:hover {
+            color: var(--text);
+        }
+        
+        .modal-title {
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+        
+        .modal-video {
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%;
+            position: relative;
+            margin-bottom: 1.5rem;
+            background-color: #000;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .modal-video img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .modal-description {
+            color: var(--text);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+        
+        .modal-code-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-code {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            color: #a5b4fc;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .modal-copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: rgba(79, 70, 229, 0.2);
+            color: #a5b4fc;
+            border: none;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background-color 0.3s;
+        }
+        
+        .modal-copy-btn:hover {
+            background-color: rgba(79, 70, 229, 0.4);
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Cookie Consent Banner Styles */
+        .cookie-consent-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--card-bg);
+            color: var(--text);
+            padding: 1rem;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .cookie-consent-banner.show {
+            display: block;
+        }
+        
+        .cookie-consent-banner p {
+            margin: 0 0 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .cookie-consent-banner button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.3s;
+        }
+        
+        .cookie-consent-banner button:hover {
+            background-color: var(--secondary);
+        }
+
+        /* Advertising Banner Styles */
+        .ad-banner-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .ad-banner {
+            flex: 1;
+            margin: 0 0.5rem;
+            text-align: center;
+        }
+
+        .ad-link {
+            display: inline-block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ad-image {
+            width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .ad-image:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Lazy Loading Styles */
+        .lazy {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        
+        .lazy.loaded {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Cookie Consent Banner -->
+    <div class="cookie-consent-banner" id="cookieConsentBanner">
+        <p>This website uses cookies to ensure you get the best experience. By continuing to use this site, you agree to our use of cookies. <a href="privacy-policy.html" style="color: var(--primary);">Learn more</a></p>
+        <button id="acceptCookies">Accept</button>
+    </div>
+
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">
+                    <i class="fas fa-code"></i> DEVSCRIPTS
+                </div>
+                <div class="nav-links">
+                    <a href="#">Home</a>
+                    <a href="#scripts">Scripts</a>
+                    <a href="https://discord.gg/zM3V4J98m6" target="_blank">Discord</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Advertising Spaces -->
+    <div class="ad-banner-container">
+        <div class="ad-banner">
+            <a href="#" class="ad-link" id="ad1">
+                <img src="https://i.ibb.co/YTJHPXTG/wavebanner.jpg" alt="Ad 1" class="ad-image">
+            </a>
+        </div>
+        <div class="ad-banner">
+            <a href="#" class="ad-link" id="ad2">
+                <img src="https://i.ibb.co/nsDrTJkR/bannerad2.png" alt="Ad 2" class="ad-image">
+            </a>
+        </div>
+    </div>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Ultimate Roblox Script Collection</h1>
+            <p>Enhance your gaming experience with premium scripts for Blue Lock Rivals, Basketball Zero, and more!</p>
+            <div class="hero-buttons">
+                <a href="#scripts" class="btn btn-primary">
+                    <i class="fas fa-download"></i> Browse Scripts
+                </a>
+                <a href="https://discord.gg/zM3V4J98m6" target="_blank" class="btn btn-outline">
+                    <i class="fab fa-discord"></i> Join Discord
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search scripts...">
+    </div>
+    
+    <section id="scripts" class="scripts-container">
+        <!-- Script cards will be dynamically populated here -->
+    </section>
+    
+    <!-- Back to Top Button -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+    
+    <!-- Modal -->
+    <div id="scriptModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal">&times;</button>
+            <h2 class="modal-title">Script Title</h2>
+            <div class="modal-video">
+                <img src="" alt="Script Preview" id="modalImage">
+            </div>
+            <p class="modal-description">Script Description</p>
+            <div class="modal-code-container">
+                <pre class="modal-code" id="modalCode"></pre>
+                <button class="modal-copy-btn">Copy Code</button>
+            </div>
+            <div class="modal-footer">
+                <a href="#" class="discord-link" target="_blank">
+                    <i class="fab fa-discord"></i> Join Discord
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification">Code copied to clipboard!</div>
+    
+    <footer>
+        <div class="footer-content">
+            <div class="copyright">© 2025 Thebilldev. All rights reserved.</div>
+            <div class="footer-links">
+                <a href="#">Home</a>
+                <a href="#scripts">Scripts</a>
+                <a href="https://discord.gg/zM3V4J98m6" target="_blank">Discord</a>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Work.Ink Script -->
+    <script src="https://cdn.work.ink/js/redirect.js?id=27" data-url="https://work.ink/direct/27" data-max="4"></script>
+    
+    <!-- Adsterra Social Bar Script -->
+    <script type='text/javascript' src='//pl26164109.effectiveratecpm.com/3b/33/ff/3b33fff6e012ac71bbc931b59f3e9d51.js'></script>
+    
+    <!-- Adsterra Popup Script -->
+    <script type='text/javascript' src='//pl26170619.effectiveratecpm.com/0f/c6/a0/0fc6a024ae5cdd4e432ebb17c3b839f4.js'></script>
+    
+    <script>
+        // ====================
+        // AD CONFIGURATION
+        // ====================
+        const ads = [
+            {
+                id: 'ad1', // ID of the first ad
+                link: 'https://buywave.cc/affiliate/thebilldev', // Link for the first ad
+                image: 'https://i.ibb.co/YTJHPXTG/wavebanner.jpg' // Image for the first ad
+            },
+            {
+                id: 'ad2', // ID of the second ad
+                link: 'https://devscripts.xyz', // Link for the second ad
+                image: 'https://i.ibb.co/nsDrTJkR/bannerad2.png' // Image for the second ad
+            }
+        ];
+
+        // Function to update ads
+        function updateAds() {
+            ads.forEach(ad => {
+                const adElement = document.getElementById(ad.id);
+                if (adElement) {
+                    adElement.href = ad.link;
+                    adElement.querySelector('.ad-image').src = ad.image;
+                }
+            });
+        }
+
+        // Initialize ads
+        updateAds();
+
+        // ====================
+        // REST OF YOUR SCRIPT
+        // ====================
+        // Script data
+        const scripts = [
+            {
+                title: "🔥SUNG JIN WOO BLUE LOCK RIVALS CUSTOM STYLE🔥",
+                description: "PLAY AS SUNG JIN WOO WITH THIS CUSTOM STYLE FOR BLR, DOMINATE EVERYONE ON THE PITCH AND SOLO THE VERSE!",
+                code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/selciawashere/screepts/refs/heads/main/cstbdsjw",true))()`,
+                discordLink: "https://discord.gg/zM3V4J98m6",
+                image: "https://i.ytimg.com/vi/Xu1dPI9pSfg/maxresdefault.jpg"
+            },
+             {
+                title: "🔥RINNS HUB BLUE LOCK RIVALS - INFINITE SPINS AND MORE🔥",
+                description: "Use Rinns Hub for BLR to get infinity spins and much more features",
+                code: `https://workink.net/1XYV/2hwk4vjq`,
+                discordLink: "https://discord.gg/zM3V4J98m6",
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSiLq9_xVq-pAFmbxspat9HNK3dQ2REDDjZ8g&s"
+            },
+            {
+                title: "OP BLUE LOCK RIVALS SCRIPT",
+                description: "FEARISE HUB BLR SCRIPT - AUTO FARM, ANY STYLE, INF EVERYTHING AND MORE!",
+                code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/UnlessDahell/Zypher-Loader/refs/heads/main/ZypherLoader.lua",true))()`,
+                discordLink: "https://discord.gg/zM3V4J98m6",
+                image: "https://www.pcgamesn.com/wp-content/sites/pcgamesn/2024/12/blue-lock-rivals-codes.jpg"
+            },
+            {
+                title: "BASKETBALL ZERO (RIVALS) SCRIPT",
+                description: "HHUB BASKETBALL ZERO SCRIPT, AUTO FARM, AUTO DRIBBLE",
+                code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/HmizoBeamzz/ddddddddddddddefcdeseffdseffdesefesd/refs/heads/main/ae582b1c65a7efd0.txt"))()`,
+                discordLink: "https://discord.gg/zM3V4J98m6",
+                image: "https://static0.gamerantimages.com/wordpress/wp-content/uploads/2025/03/basketball-zero-codes-1.jpg"
+            },
+            {
+                title: "BLUE LOCK RIVALS FREE LORENZO SCRIPT!",
+                description: "GET FREE LORENZO EASILY",
+                code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/selciawashere/screepts/refs/heads/main/BLRTBDKEYSYS",true))()`,
+                discordLink: "https://discord.gg/zM3V4J98m6",
+                image: "https://i.ytimg.com/vi/E1wx-o_KYRY/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLAczdqya8dz9gKb-Bf__5uxdGzImw"
+            },
+            {
+                title: "BLUE LOCK RIVALS FREE NOEL NOA SCRIPT",
+                description: "GET NOEL NOA FOR FREE",
+                code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/RickAlxd/BlueLockRivalsScript/main/ALLFINALTHESCRIPT",true))()`,
+                discordLink: "https://discord.gg/zM3V4J98m6",
+                image: "https://i.ytimg.com/vi/7_25drsvP-Q/maxresdefault.jpg"
+            },
+            {
+                title: "⭐ Ancestral Hub",
+                description: "This script is free Roblox script There are quality function! Convenient, Safe, Easy to use, Supports free executor. There are loads of functions with extremely high performance, use it now!",
+                code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/isMoons/loader/main/ancestral.lua", true))()`,
+                discordLink: "https://discord.gg/zM3V4J98m6",
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFyCBvwm8P7zJyEYeJowqJXQ2JeClgo0wOIg&s"
+            },
+            {
+                title: "⚽HHUB OP AUTO FARM, AUTO GOAL, ANY STYLE AND MORE!",
+                description: "This Script has an INSANELY OP Auto farm feature, auto goal and loads more features",
+                code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/HmizoBeamzz/dddddddddddddddddddddddd/refs/heads/main/8f975fa5cb4bec43.txt"))()`,
+                discordLink: "https://discord.gg/zM3V4J98m6",
+                image: "https://i.ytimg.com/vi/gWxjZkKi8Fk/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBlGkmxna59qHLWNpkySLX0VKdoXw"
+            },
+            {
+                title: "CR7 CUSTOM STYLE BLUE LOCK RIVALS",
+                description: "GET CR7 CUSTOM STYLE AND ABILITIES",
+                code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/selciawashere/screepts/refs/heads/main/cr7csks",true))()`,
+                discordLink: "https://discord.gg/zM3V4J98m6",
+                image: "https://i.ytimg.com/vi/F_FhIytd_1E/maxresdefault.jpg"
+            },
+            {
+                title: "NEYMAR CUSTOM STYLE BLUE LOCK RIVALS",
+                description: "GET NEYMAR JR CUSTOM STYLE AND ABILITIES",
+                code: `loadstring(game:HttpGet("https://raw.githubusercontent.com/selciawashere/screepts/refs/heads/main/onjcsks",true))()`,
+                discordLink: "https://discord.gg/zM3V4J98m6",
+                image: "https://tr.rbxcdn.com/180DAY-02e3dc7dd5091116940ce82da7711d45/420/420/Hat/Webp/noFilter"
+            },
+         
+        ];
+        const scriptsContainer = document.querySelector('.scripts-container');
+        
+        // Populate script cards
+        scripts.forEach((script, index) => {
+            const scriptCard = document.createElement('div');
+            scriptCard.className = 'script-card';
+            scriptCard.innerHTML = `
+                <img data-src="${script.image}" alt="${script.title}" class="script-image lazy">
+                <div class="script-content">
+                    <h3 class="script-title">${script.title}</h3>
+                    <p class="script-description">${script.description}</p>
+                    <div class="script-code">
+                        ${script.code}
+                        <button class="copy-btn" data-index="${index}">Copy</button>
+                    </div>
+                    <div class="script-footer">
+                        <a href="${script.discordLink}" target="_blank" class="discord-link">
+                            <i class="fab fa-discord"></i> Join
+                        </a>
+                        <button class="btn btn-primary view-details" data-index="${index}">View Details</button>
+                    </div>
+                </div>
+            `;
+            scriptsContainer.appendChild(scriptCard);
+        });
+
+        // Search Script Feature
+        const searchInput = document.getElementById('searchInput');
+        const scriptCards = document.querySelectorAll('.script-card');
+
+        searchInput.addEventListener('input', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            scriptCards.forEach(card => {
+                const title = card.querySelector('.script-title').textContent.toLowerCase();
+                const description = card.querySelector('.script-description').textContent.toLowerCase();
+                if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Back to Top Button
+        const backToTopButton = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTopButton.style.display = 'block';
+            } else {
+                backToTopButton.style.display = 'none';
+            }
+        });
+
+        backToTopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Modal Functionality
+        const modal = document.getElementById('scriptModal');
+        const modalTitle = document.querySelector('.modal-title');
+        const modalImage = document.getElementById('modalImage');
+        const modalDescription = document.querySelector('.modal-description');
+        const modalCode = document.getElementById('modalCode');
+        const modalDiscordLink = document.querySelector('.modal-footer .discord-link');
+        const closeModal = document.querySelector('.close-modal');
+        const notification = document.getElementById('notification');
+
+        // View Details Button
+        document.querySelectorAll('.view-details').forEach(button => {
+            button.addEventListener('click', () => {
+                const index = button.getAttribute('data-index');
+                const script = scripts[index];
+                modalTitle.textContent = script.title;
+                modalImage.src = script.image;
+                modalDescription.textContent = script.description;
+                modalCode.textContent = script.code;
+                modalDiscordLink.href = script.discordLink;
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        // Close Modal
+        closeModal.addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+
+        // Close Modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Copy Code Functionality
+        document.querySelectorAll('.copy-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const index = button.getAttribute('data-index');
+                const code = scripts[index].code;
+                copyToClipboard(code);
+            });
+        });
+
+        const modalCopyBtn = document.querySelector('.modal-copy-btn');
+        modalCopyBtn.addEventListener('click', () => {
+            copyToClipboard(modalCode.textContent);
+        });
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 2000);
+            });
+        }
+
+        // Cookie Consent Banner Functionality
+        const cookieConsentBanner = document.getElementById('cookieConsentBanner');
+        const acceptCookiesButton = document.getElementById('acceptCookies');
+
+        // Check if the user has already accepted cookies
+        if (!localStorage.getItem('cookiesAccepted')) {
+            cookieConsentBanner.classList.add('show');
+        }
+
+        // Handle cookie acceptance
+        acceptCookiesButton.addEventListener('click', () => {
+            localStorage.setItem('cookiesAccepted', 'true');
+            cookieConsentBanner.classList.remove('show');
+        });
+
+        // ====================
+        // LAZY LOADING FEATURE
+        // ====================
+        document.addEventListener("DOMContentLoaded", function() {
+            const lazyImages = document.querySelectorAll('img.lazy');
+
+            const lazyLoad = (target) => {
+                const io = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.src = img.dataset.src;
+                            img.classList.add('loaded');
+                            observer.unobserve(img);
+                        }
+                    });
+                });
+
+                io.observe(target);
+            };
+
+            lazyImages.forEach(lazyLoad);
+        });
+    </script>
+</body>
+</html>
