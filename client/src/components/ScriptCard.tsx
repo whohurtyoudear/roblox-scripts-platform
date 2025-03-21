@@ -1,5 +1,6 @@
 import { Script } from '@shared/schema';
 import { useClipboard } from '../hooks/useClipboard';
+import { ExternalLink, Copy, MessageSquare } from 'lucide-react';
 
 interface ScriptCardProps {
   script: Script;
@@ -26,6 +27,27 @@ const ScriptCard = ({ script, onScriptDetail, showNotification }: ScriptCardProp
       
       <div className="p-6">
         <h3 className="text-xl font-semibold mb-2 text-primary">{script.title}</h3>
+        
+        {/* Game Type or Link Display */}
+        <div className="flex items-center mb-2">
+          <span className="text-xs font-medium text-muted-foreground mr-2">Game:</span>
+          {script.gameLink ? (
+            <a 
+              href={script.gameLink} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Play on Roblox <ExternalLink className="h-3 w-3" />
+            </a>
+          ) : (
+            <span className="text-xs text-white bg-primary/20 px-2 py-0.5 rounded-full">
+              {script.gameType}
+            </span>
+          )}
+        </div>
+        
         <p className="text-[#94a3b8] mb-6 text-sm line-clamp-3">
           {script.description}
         </p>
@@ -35,10 +57,10 @@ const ScriptCard = ({ script, onScriptDetail, showNotification }: ScriptCardProp
             {script.code}
           </pre>
           <button 
-            className="copy-btn absolute top-2 right-2 bg-[rgba(79,70,229,0.2)] text-[#a5b4fc] text-xs py-1 px-2 rounded hover:bg-[rgba(79,70,229,0.4)] transition-colors"
+            className="copy-btn absolute top-2 right-2 bg-[rgba(79,70,229,0.2)] text-[#a5b4fc] text-xs py-1 px-2 rounded hover:bg-[rgba(79,70,229,0.4)] transition-colors flex items-center gap-1"
             onClick={handleCopy}
           >
-            <i className="far fa-copy mr-1"></i> Copy
+            <Copy className="h-3 w-3" /> Copy
           </button>
         </div>
         
@@ -48,14 +70,15 @@ const ScriptCard = ({ script, onScriptDetail, showNotification }: ScriptCardProp
             target="_blank" 
             rel="noopener noreferrer" 
             className="inline-flex items-center gap-2 bg-[#5865F2] text-white py-2 px-4 rounded-lg text-sm hover:bg-[#4752c4] transition-colors"
+            onClick={(e) => e.stopPropagation()}
           >
-            <i className="fab fa-discord"></i> Support
+            <MessageSquare className="h-4 w-4" /> Join Discord
           </a>
           <button 
-            className="text-primary hover:text-[#4f46e5] transition-colors"
+            className="text-primary hover:text-[#4f46e5] transition-colors inline-flex items-center gap-1"
             onClick={onScriptDetail}
           >
-            <i className="fas fa-external-link-alt mr-1"></i> Details
+            <ExternalLink className="h-4 w-4" /> Details
           </button>
         </div>
       </div>
