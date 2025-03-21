@@ -36,11 +36,16 @@ export const scripts = pgTable("scripts", {
   isApproved: boolean("is_approved").default(true),
 });
 
-export const insertScriptSchema = createInsertSchema(scripts).omit({
-  id: true,
-  userId: true,
-  isApproved: true,
-});
+export const insertScriptSchema = createInsertSchema(scripts)
+  .omit({
+    id: true,
+    userId: true,
+    isApproved: true,
+  })
+  .extend({
+    // Allow ISO string format for dates
+    lastUpdated: z.string().or(z.date()).optional(),
+  });
 
 export type InsertScript = z.infer<typeof insertScriptSchema>;
 export type Script = typeof scripts.$inferSelect;

@@ -71,9 +71,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
       
       // Validate script data
+      console.log('Script upload - request body:', JSON.stringify(req.body));
       const parseResult = insertScriptSchema.safeParse(req.body);
       
       if (!parseResult.success) {
+        console.log('Script validation errors:', JSON.stringify(parseResult.error.errors));
         return res.status(400).json({ 
           message: 'Invalid script data', 
           errors: parseResult.error.errors 
