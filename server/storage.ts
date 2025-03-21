@@ -1,24 +1,68 @@
-import { scripts, type Script, type InsertScript } from "@shared/schema";
+import { scripts, type Script, type InsertScript, type User, type InsertUser, users } from "@shared/schema";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import session from "express-session";
+import createMemoryStore from "memorystore";
+
+const scryptAsync = promisify(scrypt);
+
+const MemoryStore = createMemoryStore(session);
+
+// Password hashing functions
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
+
+async function comparePasswords(supplied: string, stored: string) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
 
 export interface IStorage {
+  // Script operations
   getAllScripts(): Promise<Script[]>;
   getScriptById(id: number): Promise<Script | undefined>;
   searchScripts(query: string): Promise<Script[]>;
-  createScript(script: InsertScript): Promise<Script>;
+  createScript(script: InsertScript, userId?: number): Promise<Script>;
+  getUserScripts(userId: number): Promise<Script[]>;
+  
+  // User operations
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserById(id: number): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<Omit<User, "id" | "password">>): Promise<User | undefined>;
+  
+  // Session store
+  sessionStore: any; // Using 'any' to avoid type issues with session store
 }
 
 export class MemStorage implements IStorage {
   private scripts: Map<number, Script>;
-  currentId: number;
+  private users: Map<number, User>;
+  scriptId: number;
+  userId: number;
+  sessionStore: any; // Using 'any' to avoid type issues with session store
 
   constructor() {
     this.scripts = new Map();
-    this.currentId = 1;
+    this.users = new Map();
+    this.scriptId = 1;
+    this.userId = 1;
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
     
     // Add some initial scripts
     this.addInitialScripts();
+    // Add a demo user
+    this.addInitialUsers();
   }
 
+  // Script operations
   async getAllScripts(): Promise<Script[]> {
     return Array.from(this.scripts.values());
   }
@@ -36,11 +80,70 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async createScript(insertScript: InsertScript): Promise<Script> {
-    const id = this.currentId++;
-    const script: Script = { ...insertScript, id };
+  async createScript(insertScript: InsertScript, userId?: number): Promise<Script> {
+    const id = this.scriptId++;
+    const script: Script = { 
+      ...insertScript, 
+      id, 
+      userId: userId || null, 
+      isApproved: true,
+      discordLink: insertScript.discordLink || null,
+      lastUpdated: insertScript.lastUpdated || new Date()
+    };
     this.scripts.set(id, script);
     return script;
+  }
+
+  async getUserScripts(userId: number): Promise<Script[]> {
+    return Array.from(this.scripts.values()).filter(script => script.userId === userId);
+  }
+
+  // User operations
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const id = this.userId++;
+    const hashedPassword = await hashPassword(userData.password);
+    
+    const user: User = {
+      ...userData,
+      id,
+      password: hashedPassword,
+      createdAt: new Date(),
+      avatarUrl: userData.avatarUrl || "/images/default-avatar.png",
+      bio: userData.bio || "",
+      discordUsername: userData.discordUsername || null
+    };
+    
+    this.users.set(id, user);
+    return { ...user, password: "[HIDDEN]" } as User; // Don't return actual password
+  }
+
+  async updateUser(id: number, userData: Partial<Omit<User, "id" | "password">>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+
+    const updatedUser: User = { ...user, ...userData };
+    this.users.set(id, updatedUser);
+    
+    return { ...updatedUser, password: "[HIDDEN]" } as User; // Don't return actual password
+  }
+
+  // Authentication helpers
+  async verifyUser(username: string, password: string): Promise<User | null> {
+    const user = await this.getUserByUsername(username);
+    if (!user) return null;
+    
+    const isMatch = await comparePasswords(password, user.password);
+    if (!isMatch) return null;
+    
+    return { ...user, password: "[HIDDEN]" } as User; // Don't return actual password
   }
 
   private addInitialScripts() {
@@ -110,6 +213,17 @@ export class MemStorage implements IStorage {
 
     initialScripts.forEach(script => {
       this.createScript(script);
+    });
+  }
+
+  private async addInitialUsers() {
+    await this.createUser({
+      username: "demo",
+      password: "password123",
+      email: "demo@example.com",
+      avatarUrl: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300&q=80",
+      bio: "Just a demo user who loves Roblox scripting!",
+      discordUsername: "demo#1234"
     });
   }
 }
