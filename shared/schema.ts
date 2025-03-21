@@ -31,7 +31,8 @@ export const scripts = pgTable("scripts", {
   imageUrl: text("image_url").notNull(),
   discordLink: text("discord_link"),
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
-  gameType: text("game_type").notNull(),
+  gameType: text("game_type"), // Keep this for backward compatibility
+  gameLink: text("game_link"),
   userId: integer("user_id").references(() => users.id),
   isApproved: boolean("is_approved").default(true),
 });
@@ -45,6 +46,14 @@ export const insertScriptSchema = createInsertSchema(scripts)
   .extend({
     // Allow ISO string format for dates
     lastUpdated: z.string().or(z.date()).optional(),
+    // Make gameType optional since we now prefer gameLink
+    gameType: z.string().optional(),
+    // Add validation for gameLink if provided
+    gameLink: z.string().url("Please enter a valid Roblox game URL").optional(),
+  })
+  .refine(data => data.gameType || data.gameLink, {
+    message: "Either Game Type or Game Link must be provided",
+    path: ["gameLink"],
   });
 
 export type InsertScript = z.infer<typeof insertScriptSchema>;

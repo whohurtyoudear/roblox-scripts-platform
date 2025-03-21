@@ -13,16 +13,29 @@ import { Loader2, Upload, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
+// Game types for fallback or categorization
 const gameTypes = [
   "Blade Ball",
   "Blox Fruits",
   "Pet Simulator X",
-  "Arsenal",
+  "Arsenal", 
   "Doors",
   "Brookhaven",
   "Natural Disaster Survival",
   "Adopt Me",
   "Murder Mystery 2",
+  "King Legacy",
+  "Tower of Hell",
+  "Royale High",
+  "SharkBite",
+  "Welcome to Bloxburg",
+  "Piggy",
+  "Jailbreak",
+  "Islands",
+  "Build A Boat For Treasure",
+  "Bee Swarm Simulator",
+  "MeepCity",
+  "Super Bomb Survival",
   "Other"
 ];
 
@@ -36,6 +49,7 @@ export default function UploadScriptPage() {
     description: "",
     code: "",
     gameType: "",
+    gameLink: "",
     imageUrl: "",
     discordLink: ""
   });
@@ -81,8 +95,14 @@ export default function UploadScriptPage() {
       errors.code = "Script code is required";
     }
     
-    if (!formState.gameType?.trim()) {
-      errors.gameType = "Game type is required";
+    // Either gameType or gameLink must be provided
+    if (!formState.gameType?.trim() && !formState.gameLink?.trim()) {
+      errors.gameLink = "Either Game Type or Game Link must be provided";
+    }
+    
+    // Validate gameLink format if provided
+    if (formState.gameLink?.trim() && !formState.gameLink.match(/^https?:\/\/(www\.)?roblox\.com\/games\/\d+/)) {
+      errors.gameLink = "Please enter a valid Roblox game URL (e.g., https://www.roblox.com/games/123456789)";
     }
     
     if (!formState.imageUrl?.trim()) {
@@ -104,7 +124,8 @@ export default function UploadScriptPage() {
       title: formState.title!,
       description: formState.description!,
       code: formState.code!,
-      gameType: formState.gameType!,
+      gameType: formState.gameType || undefined,
+      gameLink: formState.gameLink || undefined,
       imageUrl: formState.imageUrl!,
       discordLink: formState.discordLink || undefined,
       lastUpdated: new Date().toISOString()
@@ -169,7 +190,7 @@ export default function UploadScriptPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="gameType">
-                  Game Type <span className="text-red-500">*</span>
+                  Game Type <span className="text-muted-foreground">(or use Game Link below)</span>
                 </Label>
                 <select
                   id="gameType"
@@ -188,6 +209,25 @@ export default function UploadScriptPage() {
                   <p className="text-sm text-red-500">{formErrors.gameType}</p>
                 )}
               </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="gameLink">
+                Game Link <span className="text-muted-foreground">(or use Game Type above)</span>
+              </Label>
+              <Input
+                id="gameLink"
+                placeholder="https://www.roblox.com/games/123456789/GameName"
+                value={formState.gameLink}
+                onChange={(e) => setFormState({...formState, gameLink: e.target.value})}
+                className={formErrors.gameLink ? "border-red-500" : ""}
+              />
+              {formErrors.gameLink && (
+                <p className="text-sm text-red-500">{formErrors.gameLink}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Direct link to the Roblox game (e.g., https://www.roblox.com/games/123456789)
+              </p>
             </div>
             
             <div className="space-y-2">
