@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import AuthPage from "@/pages/auth-page";
+import ProfilePage from "@/pages/profile-page";
+import UploadScriptPage from "@/pages/upload-script-page";
 import { useState } from "react";
 import { Script } from "@shared/schema";
 import ScriptDetailModal from "./components/ScriptDetailModal";
@@ -49,6 +51,14 @@ function Router() {
               showNotification={showNotification}
             />
           )} 
+        />
+        <ProtectedRoute 
+          path="/profile" 
+          component={ProfilePage} 
+        />
+        <ProtectedRoute 
+          path="/upload" 
+          component={UploadScriptPage} 
         />
         <Route path="/auth" component={AuthPage} />
         <Route component={NotFound} />
