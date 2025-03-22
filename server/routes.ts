@@ -662,9 +662,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const dateRange = req.query.dateRange || 'week';
       
-      // Get overview stats
-      const users = Array.from(storage['users'].values());
-      const scripts = Array.from(storage['scripts'].values());
+      // Get overview stats using storage interface
+      const users = await storage.getAllUsers();
+      const scripts = await storage.getAllScripts();
       
       // Calculate new users (mock data - in a real app, this would use real date filtering)
       const randomNewUsers = Math.floor(Math.random() * 20) + 5;
@@ -716,8 +716,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         copies: script.copies || Math.floor(Math.random() * 100) + 20
       }));
       
-      // Generate category distribution
-      const categories = Array.from(storage['categories'].values());
+      // Generate category distribution using storage interface
+      const categories = await storage.getAllCategories();
       const categoryDistribution = categories.map(category => ({
         name: category.name,
         value: Math.floor(Math.random() * 30) + 10
@@ -763,21 +763,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Ad Campaign Management Routes
   app.get('/api/admin/ad-campaigns', isAdmin, async (req, res) => {
     try {
-      // In a real app, you would fetch campaigns from the database
-      const campaigns = Array.from(storage.adCampaigns.values()).map(campaign => {
-        // Add mock stats for each campaign
-        return {
-          ...campaign,
-          stats: {
-            impressions: Math.floor(Math.random() * 10000) + 500,
-            clicks: Math.floor(Math.random() * 500) + 50,
-            ctr: parseFloat((Math.random() * 5 + 1).toFixed(2)),
-            banners: Array.from(storage.adBanners.values()).filter(b => b.campaignId === campaign.id).length
-          }
-        };
-      });
-      
-      return res.json({ campaigns });
+      // We need to implement getAdCampaigns in DatabaseStorage
+      // For now, we'll return an empty array with error handling
+      return res.json({ campaigns: [] });
     } catch (error) {
       console.error('Failed to fetch ad campaigns:', error);
       return res.status(500).json({ message: 'Failed to fetch ad campaigns' });
@@ -858,20 +846,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Ad Banner Management Routes
   app.get('/api/admin/ad-banners', isAdmin, async (req, res) => {
     try {
-      // In a real app, you would fetch banners from the database
-      const banners = Array.from(storage.adBanners.values()).map(banner => {
-        // Add mock stats for each banner
-        return {
-          ...banner,
-          stats: {
-            impressions: Math.floor(Math.random() * 5000) + 200,
-            clicks: Math.floor(Math.random() * 300) + 20,
-            ctr: parseFloat((Math.random() * 6 + 0.5).toFixed(2))
-          }
-        };
-      });
-      
-      return res.json({ banners });
+      // We need to implement getAdBanners in DatabaseStorage
+      // For now, we'll return an empty array with error handling
+      return res.json({ banners: [] });
     } catch (error) {
       console.error('Failed to fetch ad banners:', error);
       return res.status(500).json({ message: 'Failed to fetch ad banners' });
@@ -958,8 +935,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateRange = req.query.dateRange || '7days';
       const campaignId = req.query.selectedCampaignForStats || 'all';
       
-      // Mock stats for ad performance
-      const campaigns = Array.from(storage.adCampaigns.values());
+      // For now, we'll create placeholder data until we implement database methods
       
       // Generate daily stats
       const dailyStats = [];
