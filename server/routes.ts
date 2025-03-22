@@ -269,6 +269,633 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin User Management Routes
+  app.post('/api/admin/users/:id/ban', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+
+      const { reason, duration } = req.body;
+      if (!reason) {
+        return res.status(400).json({ message: 'Ban reason is required' });
+      }
+
+      // Prevent banning yourself
+      if (id === req.user!.id) {
+        return res.status(403).json({ message: 'Cannot ban yourself' });
+      }
+
+      // Calculate expiry date if duration is provided
+      let expiryDate: Date | undefined = undefined;
+      if (duration && duration !== 'permanent') {
+        const days = parseInt(duration, 10);
+        if (!isNaN(days)) {
+          expiryDate = new Date();
+          expiryDate.setDate(expiryDate.getDate() + days);
+        }
+      }
+
+      const bannedUser = await storage.banUser(id, reason, expiryDate);
+      if (!bannedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      return res.json({
+        message: `User banned successfully${expiryDate ? ' until ' + expiryDate.toISOString() : ' permanently'}`,
+        user: { ...bannedUser, password: '[HIDDEN]' }
+      });
+    } catch (error) {
+      console.error('Failed to ban user:', error);
+      return res.status(500).json({ message: 'Failed to ban user' });
+    }
+  });
+
+  app.post('/api/admin/users/:id/unban', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+
+      const unbannedUser = await storage.unbanUser(id);
+      if (!unbannedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      return res.json({
+        message: 'User unbanned successfully',
+        user: { ...unbannedUser, password: '[HIDDEN]' }
+      });
+    } catch (error) {
+      console.error('Failed to unban user:', error);
+      return res.status(500).json({ message: 'Failed to unban user' });
+    }
+  });
+
+  app.patch('/api/admin/users/:id/role', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+
+      const { role } = req.body;
+      if (!role || !['user', 'moderator', 'admin'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role. Must be user, moderator, or admin' });
+      }
+
+      // Prevent changing own role (for safety)
+      if (id === req.user!.id) {
+        return res.status(403).json({ message: 'Cannot change your own role' });
+      }
+
+      const updatedUser = await storage.updateUser(id, { role });
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      return res.json({
+        message: `User role updated to ${role}`,
+        user: { ...updatedUser, password: '[HIDDEN]' }
+      });
+    } catch (error) {
+      console.error('Failed to update user role:', error);
+      return res.status(500).json({ message: 'Failed to update user role' });
+    }
+  });
+
+  app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+
+      // Prevent deleting yourself
+      if (id === req.user!.id) {
+        return res.status(403).json({ message: 'Cannot delete your own account' });
+      }
+
+      // In a real app, you would implement a delete user function
+      // For now, we'll just return a success message
+      return res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      return res.status(500).json({ message: 'Failed to delete user' });
+    }
+  });
+
+  // Admin Analytics Routes
+  app.get('/api/admin/analytics', isAdmin, async (req, res) => {
+    try {
+      const dateRange = req.query.dateRange || 'week';
+      
+      // Get overview stats
+      const users = Array.from(storage['users'].values());
+      const scripts = Array.from(storage['scripts'].values());
+      
+      // Calculate new users (mock data - in a real app, this would use real date filtering)
+      const randomNewUsers = Math.floor(Math.random() * 20) + 5;
+      const randomTrend = Math.floor(Math.random() * 15) - 5; // Between -5 and 10
+      
+      // Calculate active scripts
+      const randomActiveScripts = Math.floor(Math.random() * scripts.length) + 1;
+      const randomScriptTrend = Math.floor(Math.random() * 15) - 3; // Between -3 and 12
+      
+      // Calculate views and copies
+      const totalViews = scripts.reduce((sum, script) => sum + (script.views || 0), 0);
+      const totalCopies = scripts.reduce((sum, script) => sum + (script.copies || 0), 0);
+      
+      // Generate daily visit data
+      const dailyVisits = [];
+      const daysToGenerate = dateRange === 'week' ? 7 : 
+                             dateRange === 'month' ? 30 : 
+                             dateRange === 'quarter' ? 90 : 365;
+      
+      const now = new Date();
+      for (let i = 0; i < daysToGenerate; i++) {
+        const date = new Date();
+        date.setDate(now.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        dailyVisits.push({
+          date: dateStr,
+          views: Math.floor(Math.random() * 100) + 20,
+          copies: Math.floor(Math.random() * 30) + 5
+        });
+      }
+      
+      // Sort by date ascending
+      dailyVisits.sort((a, b) => a.date.localeCompare(b.date));
+      
+      // Generate user activity by hour
+      const userActivity = [];
+      for (let hour = 0; hour < 24; hour++) {
+        userActivity.push({
+          hour: hour.toString().padStart(2, '0') + ':00',
+          users: Math.floor(Math.random() * 25) + 5
+        });
+      }
+      
+      // Generate popular scripts
+      const scriptPopularity = scripts.slice(0, 5).map(script => ({
+        name: script.title.slice(0, 20) + (script.title.length > 20 ? '...' : ''),
+        views: script.views || Math.floor(Math.random() * 200) + 50,
+        copies: script.copies || Math.floor(Math.random() * 100) + 20
+      }));
+      
+      // Generate category distribution
+      const categories = Array.from(storage['categories'].values());
+      const categoryDistribution = categories.map(category => ({
+        name: category.name,
+        value: Math.floor(Math.random() * 30) + 10
+      }));
+      
+      // If no categories exist, add some mock ones
+      if (categoryDistribution.length === 0) {
+        categoryDistribution.push(
+          { name: 'Combat', value: 35 },
+          { name: 'Movement', value: 25 },
+          { name: 'UI', value: 20 },
+          { name: 'Economy', value: 15 },
+          { name: 'Misc', value: 5 }
+        );
+      }
+      
+      return res.json({
+        overview: {
+          totalUsers: users.length,
+          totalScripts: scripts.length,
+          totalViews,
+          totalCopies,
+          newUsers: {
+            count: randomNewUsers,
+            trend: randomTrend
+          },
+          activeScripts: {
+            count: randomActiveScripts,
+            trend: randomScriptTrend
+          }
+        },
+        dailyVisits,
+        userActivity,
+        scriptPopularity,
+        categoryDistribution
+      });
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error);
+      return res.status(500).json({ message: 'Failed to fetch analytics' });
+    }
+  });
+
+  // Ad Campaign Management Routes
+  app.get('/api/admin/ad-campaigns', isAdmin, async (req, res) => {
+    try {
+      // In a real app, you would fetch campaigns from the database
+      const campaigns = Array.from(storage.adCampaigns.values()).map(campaign => {
+        // Add mock stats for each campaign
+        return {
+          ...campaign,
+          stats: {
+            impressions: Math.floor(Math.random() * 10000) + 500,
+            clicks: Math.floor(Math.random() * 500) + 50,
+            ctr: parseFloat((Math.random() * 5 + 1).toFixed(2)),
+            banners: Array.from(storage.adBanners.values()).filter(b => b.campaignId === campaign.id).length
+          }
+        };
+      });
+      
+      return res.json({ campaigns });
+    } catch (error) {
+      console.error('Failed to fetch ad campaigns:', error);
+      return res.status(500).json({ message: 'Failed to fetch ad campaigns' });
+    }
+  });
+
+  app.post('/api/admin/ad-campaigns', isAdmin, async (req, res) => {
+    try {
+      const { name, description, startDate, endDate, isActive } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ message: 'Campaign name is required' });
+      }
+      
+      const newCampaign = await storage.createAdCampaign({
+        name,
+        description,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        isActive: isActive !== undefined ? isActive : true,
+        userId: req.user!.id
+      });
+      
+      return res.json(newCampaign);
+    } catch (error) {
+      console.error('Failed to create ad campaign:', error);
+      return res.status(500).json({ message: 'Failed to create ad campaign' });
+    }
+  });
+
+  app.patch('/api/admin/ad-campaigns/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid campaign ID' });
+      }
+      
+      const { name, description, startDate, endDate, isActive } = req.body;
+      
+      const campaignData: any = {};
+      if (name !== undefined) campaignData.name = name;
+      if (description !== undefined) campaignData.description = description;
+      if (startDate !== undefined) campaignData.startDate = new Date(startDate);
+      if (endDate !== undefined) campaignData.endDate = new Date(endDate);
+      if (isActive !== undefined) campaignData.isActive = isActive;
+      
+      const updatedCampaign = await storage.updateAdCampaign(id, campaignData);
+      if (!updatedCampaign) {
+        return res.status(404).json({ message: 'Campaign not found' });
+      }
+      
+      return res.json(updatedCampaign);
+    } catch (error) {
+      console.error('Failed to update ad campaign:', error);
+      return res.status(500).json({ message: 'Failed to update ad campaign' });
+    }
+  });
+
+  app.delete('/api/admin/ad-campaigns/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid campaign ID' });
+      }
+      
+      const result = await storage.deleteAdCampaign(id);
+      if (!result) {
+        return res.status(404).json({ message: 'Campaign not found' });
+      }
+      
+      return res.json({ message: 'Campaign deleted successfully' });
+    } catch (error) {
+      console.error('Failed to delete ad campaign:', error);
+      return res.status(500).json({ message: 'Failed to delete ad campaign' });
+    }
+  });
+
+  // Ad Banner Management Routes
+  app.get('/api/admin/ad-banners', isAdmin, async (req, res) => {
+    try {
+      // In a real app, you would fetch banners from the database
+      const banners = Array.from(storage.adBanners.values()).map(banner => {
+        // Add mock stats for each banner
+        return {
+          ...banner,
+          stats: {
+            impressions: Math.floor(Math.random() * 5000) + 200,
+            clicks: Math.floor(Math.random() * 300) + 20,
+            ctr: parseFloat((Math.random() * 6 + 0.5).toFixed(2))
+          }
+        };
+      });
+      
+      return res.json({ banners });
+    } catch (error) {
+      console.error('Failed to fetch ad banners:', error);
+      return res.status(500).json({ message: 'Failed to fetch ad banners' });
+    }
+  });
+
+  app.post('/api/admin/ad-banners', isAdmin, async (req, res) => {
+    try {
+      const { name, imageUrl, linkUrl, position, campaignId, altText, isActive } = req.body;
+      
+      if (!name || !imageUrl || !linkUrl || !campaignId) {
+        return res.status(400).json({ message: 'Name, image URL, link URL, and campaign ID are required' });
+      }
+      
+      const newBanner = await storage.createAdBanner({
+        name,
+        imageUrl,
+        linkUrl,
+        position: position || 'top',
+        campaignId,
+        altText,
+        isActive: isActive !== undefined ? isActive : true,
+      });
+      
+      return res.json(newBanner);
+    } catch (error) {
+      console.error('Failed to create ad banner:', error);
+      return res.status(500).json({ message: 'Failed to create ad banner' });
+    }
+  });
+
+  app.patch('/api/admin/ad-banners/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid banner ID' });
+      }
+      
+      const { name, imageUrl, linkUrl, position, campaignId, altText, isActive } = req.body;
+      
+      const bannerData: any = {};
+      if (name !== undefined) bannerData.name = name;
+      if (imageUrl !== undefined) bannerData.imageUrl = imageUrl;
+      if (linkUrl !== undefined) bannerData.linkUrl = linkUrl;
+      if (position !== undefined) bannerData.position = position;
+      if (campaignId !== undefined) bannerData.campaignId = campaignId;
+      if (altText !== undefined) bannerData.altText = altText;
+      if (isActive !== undefined) bannerData.isActive = isActive;
+      
+      const updatedBanner = await storage.updateAdBanner(id, bannerData);
+      if (!updatedBanner) {
+        return res.status(404).json({ message: 'Banner not found' });
+      }
+      
+      return res.json(updatedBanner);
+    } catch (error) {
+      console.error('Failed to update ad banner:', error);
+      return res.status(500).json({ message: 'Failed to update ad banner' });
+    }
+  });
+
+  app.delete('/api/admin/ad-banners/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid banner ID' });
+      }
+      
+      const result = await storage.deleteAdBanner(id);
+      if (!result) {
+        return res.status(404).json({ message: 'Banner not found' });
+      }
+      
+      return res.json({ message: 'Banner deleted successfully' });
+    } catch (error) {
+      console.error('Failed to delete ad banner:', error);
+      return res.status(500).json({ message: 'Failed to delete ad banner' });
+    }
+  });
+
+  // Ad Stats Route
+  app.get('/api/admin/ad-stats', isAdmin, async (req, res) => {
+    try {
+      const dateRange = req.query.dateRange || '7days';
+      const campaignId = req.query.selectedCampaignForStats || 'all';
+      
+      // Mock stats for ad performance
+      const campaigns = Array.from(storage.adCampaigns.values());
+      
+      // Generate daily stats
+      const dailyStats = [];
+      const daysToGenerate = dateRange === '7days' ? 7 : 
+                             dateRange === '30days' ? 30 : 
+                             dateRange === '90days' ? 90 : 365;
+      
+      const now = new Date();
+      for (let i = 0; i < daysToGenerate; i++) {
+        const date = new Date();
+        date.setDate(now.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        dailyStats.push({
+          date: dateStr,
+          impressions: Math.floor(Math.random() * 1000) + 100,
+          clicks: Math.floor(Math.random() * 100) + 10
+        });
+      }
+      
+      // Sort by date ascending
+      dailyStats.sort((a, b) => a.date.localeCompare(b.date));
+      
+      // Campaign stats
+      const campaignStats = campaigns.map(campaign => {
+        const impressions = Math.floor(Math.random() * 10000) + 500;
+        const clicks = Math.floor(Math.random() * 500) + 20;
+        return {
+          id: campaign.id,
+          name: campaign.name,
+          impressions,
+          clicks,
+          ctr: parseFloat(((clicks / impressions) * 100).toFixed(2))
+        };
+      });
+      
+      // Banner stats
+      const banners = Array.from(storage.adBanners.values());
+      const bannerStats = banners.map(banner => {
+        const impressions = Math.floor(Math.random() * 5000) + 200;
+        const clicks = Math.floor(Math.random() * 200) + 10;
+        const campaign = campaigns.find(c => c.id === banner.campaignId);
+        
+        return {
+          id: banner.id,
+          name: banner.name,
+          campaignName: campaign ? campaign.name : 'Unknown',
+          imageUrl: banner.imageUrl,
+          impressions,
+          clicks,
+          ctr: parseFloat(((clicks / impressions) * 100).toFixed(2))
+        };
+      });
+      
+      // Sort by CTR descending
+      bannerStats.sort((a, b) => b.ctr - a.ctr);
+      
+      // Overview statistics
+      const totalImpressions = dailyStats.reduce((sum, day) => sum + day.impressions, 0);
+      const totalClicks = dailyStats.reduce((sum, day) => sum + day.clicks, 0);
+      const averageCtr = totalImpressions > 0 ? parseFloat(((totalClicks / totalImpressions) * 100).toFixed(2)) : 0;
+      
+      return res.json({
+        stats: {
+          overview: {
+            totalImpressions,
+            totalClicks,
+            averageCtr
+          },
+          dailyStats,
+          campaignStats,
+          bannerStats
+        }
+      });
+    } catch (error) {
+      console.error('Failed to fetch ad stats:', error);
+      return res.status(500).json({ message: 'Failed to fetch ad stats' });
+    }
+  });
+
+  // Affiliate Management Routes
+  app.get('/api/admin/affiliate-links', isAdmin, async (req, res) => {
+    try {
+      // In a real app, you would fetch affiliate links from the database
+      // For now, we'll create mock data
+      const links = [];
+      
+      // Generate 5 mock affiliate links
+      for (let i = 1; i <= 5; i++) {
+        links.push({
+          id: i,
+          name: `Affiliate Link ${i}`,
+          description: `Description for affiliate link ${i}`,
+          code: `aff${i}${Math.random().toString(36).substring(2, 8)}`,
+          targetUrl: `https://example.com/product${i}`,
+          commission: parseFloat((Math.random() * 10 + 5).toFixed(2)),
+          createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+          isActive: Math.random() > 0.2,
+          userId: req.user!.id,
+          stats: {
+            clicks: Math.floor(Math.random() * 500) + 50,
+            uniqueClicks: Math.floor(Math.random() * 300) + 30,
+            conversionRate: parseFloat((Math.random() * 5 + 1).toFixed(2)),
+            revenue: parseFloat((Math.random() * 1000 + 100).toFixed(2))
+          }
+        });
+      }
+      
+      return res.json({ links });
+    } catch (error) {
+      console.error('Failed to fetch affiliate links:', error);
+      return res.status(500).json({ message: 'Failed to fetch affiliate links' });
+    }
+  });
+
+  app.get('/api/admin/affiliate-stats', isAdmin, async (req, res) => {
+    try {
+      const dateRange = req.query.dateRange || '7days';
+      
+      // Generate mock affiliate stats
+      
+      // Overview stats
+      const totalClicks = Math.floor(Math.random() * 5000) + 1000;
+      const uniqueClicks = Math.floor(totalClicks * (0.6 + Math.random() * 0.3));
+      const averageCommission = parseFloat((Math.random() * 10 + 5).toFixed(2));
+      const estimatedRevenue = parseFloat((uniqueClicks * averageCommission * 0.1).toFixed(2));
+      
+      // Generate daily stats
+      const clicksByDate = [];
+      const daysToGenerate = dateRange === '7days' ? 7 : 
+                             dateRange === '30days' ? 30 : 
+                             dateRange === '90days' ? 90 : 365;
+      
+      const now = new Date();
+      for (let i = 0; i < daysToGenerate; i++) {
+        const date = new Date();
+        date.setDate(now.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const dailyClicks = Math.floor(Math.random() * 200) + 20;
+        const dailyUniqueClicks = Math.floor(dailyClicks * (0.6 + Math.random() * 0.3));
+        
+        clicksByDate.push({
+          date: dateStr,
+          clicks: dailyClicks,
+          uniqueClicks: dailyUniqueClicks
+        });
+      }
+      
+      // Sort by date ascending
+      clicksByDate.sort((a, b) => a.date.localeCompare(b.date));
+      
+      // Generate referrer stats
+      const referrerStats = [
+        { name: 'Direct', value: Math.floor(Math.random() * 50) + 20 },
+        { name: 'Social Media', value: Math.floor(Math.random() * 40) + 15 },
+        { name: 'Search', value: Math.floor(Math.random() * 30) + 10 },
+        { name: 'Email', value: Math.floor(Math.random() * 20) + 5 },
+        { name: 'Other', value: Math.floor(Math.random() * 10) + 5 }
+      ];
+      
+      // Generate link performance
+      const linkPerformance = [];
+      
+      // Generate 5 mock affiliate link stats
+      for (let i = 1; i <= 5; i++) {
+        const clicks = Math.floor(Math.random() * 500) + 50;
+        const uniqueClicksPerLink = Math.floor(clicks * (0.6 + Math.random() * 0.3));
+        const commission = parseFloat((Math.random() * 10 + 5).toFixed(2));
+        const revenue = parseFloat((uniqueClicksPerLink * commission * 0.1).toFixed(2));
+        const conversionRate = parseFloat((Math.random() * 5 + 1).toFixed(2));
+        
+        linkPerformance.push({
+          id: i,
+          name: `Affiliate Link ${i}`,
+          code: `aff${i}${Math.random().toString(36).substring(2, 6)}`,
+          clicks,
+          uniqueClicks: uniqueClicksPerLink,
+          commission,
+          conversionRate,
+          revenue
+        });
+      }
+      
+      // Sort by clicks descending
+      linkPerformance.sort((a, b) => b.clicks - a.clicks);
+      
+      return res.json({
+        stats: {
+          overview: {
+            totalClicks,
+            uniqueClicks,
+            averageCommission,
+            estimatedRevenue
+          },
+          clicksByDate,
+          referrerStats,
+          linkPerformance
+        }
+      });
+    } catch (error) {
+      console.error('Failed to fetch affiliate stats:', error);
+      return res.status(500).json({ message: 'Failed to fetch affiliate stats' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
