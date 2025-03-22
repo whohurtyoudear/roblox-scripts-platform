@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import AdBanner from "./components/AdBanner";
 import BannerManagement from "./components/BannerManagement";
+import CookieConsent from "./components/CookieConsent";
 import { useLocation } from "wouter";
 
 function Router() {
@@ -130,6 +131,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router />
+        <CookieConsent />
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>
