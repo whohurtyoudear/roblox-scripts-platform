@@ -1,9 +1,10 @@
 import { Script } from '@shared/schema';
 import { useClipboard } from '../hooks/useClipboard';
-import { ExternalLink, Copy, MessageSquare, Heart } from 'lucide-react';
+import { ExternalLink, Copy, MessageSquare, Heart, Star } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import StarRating from './StarRating';
 
 interface ScriptCardProps {
   script: Script;
@@ -30,6 +31,15 @@ const ScriptCard = ({ script, onScriptDetail, showNotification }: ScriptCardProp
       }
     },
     enabled: !!user, // Only run if user is logged in
+  });
+  
+  // Fetch script rating
+  const { data: scriptRating } = useQuery({
+    queryKey: [`/api/scripts/${script.id}/rating`],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/scripts/${script.id}/rating`);
+      return res.json();
+    },
   });
   
   // Mutations for adding/removing favorites

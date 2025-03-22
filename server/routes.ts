@@ -190,6 +190,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: 'Failed to increment copy count' });
     }
   });
+  
+  // Script rating endpoints
+  app.post('/api/scripts/:id/rate', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const scriptId = parseInt(req.params.id, 10);
+      const value = parseInt(req.body.value);
+      
+      if (isNaN(scriptId)) {
+        return res.status(400).json({ message: 'Invalid script ID' });
+      }
+      
+      if (isNaN(value) || value < 1 || value > 5) {
+        return res.status(400).json({ message: 'Rating must be a number between 1 and 5' });
+      }
+      
+      const script = await storage.getScriptById(scriptId);
+      if (!script) {
+        return res.status(404).json({ message: 'Script not found' });
+      }
+      
+      const rating = await storage.rateScript({
+        userId,
+        scriptId,
+        value
+      });
+      
+      // Fetch the updated script with the new rating
+      const updatedScript = await storage.getScriptById(scriptId);
+      
+      return res.status(200).json({ 
+        rating,
+        scriptRating: {
+          avgRating: updatedScript?.avgRating || 0,
+          ratingCount: updatedScript?.ratingCount || 0
+        }
+      });
+    } catch (error) {
+      console.error('Error rating script:', error);
+      return res.status(500).json({ message: 'Failed to rate script' });
+    }
+  });
+  
+  app.get('/api/scripts/:id/rating', async (req, res) => {
+    try {
+      const scriptId = parseInt(req.params.id, 10);
+      
+      if (isNaN(scriptId)) {
+        return res.status(400).json({ message: 'Invalid script ID' });
+      }
+      
+      const script = await storage.getScriptById(scriptId);
+      if (!script) {
+        return res.status(404).json({ message: 'Script not found' });
+      }
+      
+      return res.status(200).json({
+        avgRating: script.avgRating || 0,
+        ratingCount: script.ratingCount || 0
+      });
+    } catch (error) {
+      console.error('Error getting script rating:', error);
+      return res.status(500).json({ message: 'Failed to get script rating' });
+    }
+  });
+  
+  app.get('/api/scripts/:id/rating/user', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const scriptId = parseInt(req.params.id, 10);
+      
+      if (isNaN(scriptId)) {
+        return res.status(400).json({ message: 'Invalid script ID' });
+      }
+      
+      const rating = await storage.getUserRating(userId, scriptId);
+      return res.status(200).json({ rating });
+    } catch (error) {
+      console.error('Error getting user rating:', error);
+      return res.status(500).json({ message: 'Failed to get user rating' });
+    }
+  });
 
   // Script upload
   app.post('/api/scripts', isAuthenticated, async (req, res) => {

@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Script } from '@shared/schema';
 import { useClipboard } from '../hooks/useClipboard';
 import { format } from 'date-fns';
-import { X, ExternalLink, Copy, MessageSquare, Trash, Edit, AlertCircle, Heart } from 'lucide-react';
+import { X, ExternalLink, Copy, MessageSquare, Trash, Edit, AlertCircle, Heart, Star } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import StarRating from './StarRating';
 
 interface ScriptDetailModalProps {
   script: Script;
@@ -33,6 +34,25 @@ const ScriptDetailModal = ({ script, onClose, showNotification, onDelete }: Scri
       }
     },
     enabled: !!user, // Only run if user is logged in
+  });
+  
+  // Fetch script rating
+  const { data: scriptRating } = useQuery({
+    queryKey: [`/api/scripts/${script.id}/rating`],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/scripts/${script.id}/rating`);
+      return res.json();
+    },
+  });
+  
+  // Fetch user's current rating for this script if logged in
+  const { data: userRating } = useQuery({
+    queryKey: [`/api/scripts/${script.id}/rating/user`],
+    queryFn: async () => {
+      const res = await apiRequest('GET', `/api/scripts/${script.id}/rating/user`);
+      return res.json();
+    },
+    enabled: !!user,
   });
   
   // Mutations for adding/removing favorites
@@ -77,6 +97,24 @@ const ScriptDetailModal = ({ script, onClose, showNotification, onDelete }: Scri
       queryClient.invalidateQueries({ queryKey: ['/api/scripts'] });
       onClose();
       if (onDelete) onDelete();
+    },
+    onError: (error: Error) => {
+      showNotification(`Error: ${error.message}`);
+    }
+  });
+  
+  // Rating mutation
+  const ratingMutation = useMutation({
+    mutationFn: async (value: number) => {
+      const res = await apiRequest('POST', `/api/scripts/${script.id}/rate`, { value });
+      return res.json();
+    },
+    onSuccess: () => {
+      showNotification('Rating submitted successfully!');
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: [`/api/scripts/${script.id}/rating`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/scripts/${script.id}/rating/user`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scripts'] });
     },
     onError: (error: Error) => {
       showNotification(`Error: ${error.message}`);
@@ -148,7 +186,38 @@ const ScriptDetailModal = ({ script, onClose, showNotification, onDelete }: Scri
           </div>
           
           <div className="text-white mb-6 leading-relaxed">
-            <p className="mb-4">{script.description}</p>
+            <div className="flex justify-between items-center mb-4">
+              <p>{script.description}</p>
+              
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-2 mb-1">
+                  <StarRating 
+                    rating={scriptRating?.avgRating || 0} 
+                    readOnly={true}
+                    size={18}
+                    className="mt-1"
+                  />
+                  <span className="text-yellow-400 text-sm">
+                    {scriptRating?.avgRating ? scriptRating.avgRating.toFixed(1) : '0.0'} 
+                    <span className="text-gray-400 text-xs ml-1">
+                      ({scriptRating?.ratingCount || 0} {scriptRating?.ratingCount === 1 ? 'rating' : 'ratings'})
+                    </span>
+                  </span>
+                </div>
+                
+                {user && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400 text-xs mr-1">Rate:</span>
+                    <StarRating
+                      rating={userRating?.rating?.value || 0}
+                      onChange={(value) => ratingMutation.mutate(value)}
+                      size={16}
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
             
             <h3 className="font-semibold text-lg mb-2 text-primary">Game Information:</h3>
             {script.gameType && <p className="mb-2">Type: {script.gameType}</p>}
