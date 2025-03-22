@@ -13,6 +13,7 @@ import ScriptDetailModal from "./components/ScriptDetailModal";
 import Notification from "./components/Notification";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
+import AdBanner, { adBannerData } from "./components/AdBanner";
 
 function Router() {
   const [selectedScript, setSelectedScript] = useState<Script | null>(null);
@@ -49,6 +50,31 @@ function Router() {
 
   return (
     <>
+      {/* Ad Banners at the top of every page except auth page */}
+      <Route path="/:rest*">
+        {(params) => {
+          // Don't show ad banners on the auth page
+          if (params.rest === "auth") return null;
+          
+          return (
+            <div className="container mx-auto px-4 pt-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <AdBanner 
+                  imageUrl={adBannerData[0].imageUrl}
+                  linkUrl={adBannerData[0].linkUrl}
+                  altText={adBannerData[0].altText}
+                />
+                <AdBanner 
+                  imageUrl={adBannerData[1].imageUrl}
+                  linkUrl={adBannerData[1].linkUrl}
+                  altText={adBannerData[1].altText}
+                />
+              </div>
+            </div>
+          );
+        }}
+      </Route>
+      
       <Switch>
         <ProtectedRoute 
           path="/" 

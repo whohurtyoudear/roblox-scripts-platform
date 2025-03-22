@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { Loader2, User, Mail, MessageSquare, MessagesSquare, Upload } from "lucide-react";
+import { Loader2, User, Mail, MessageSquare, MessagesSquare, Upload, Shield, Lock } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import ChangePasswordForm from "@/components/ChangePasswordForm";
+import CreateAdminForm from "@/components/CreateAdminForm";
 
 export default function ProfilePage() {
   const { user, isLoading, updateProfileMutation } = useAuth();
@@ -86,9 +88,11 @@ export default function ProfilePage() {
       </Card>
       
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className={`grid w-full ${user.isAdmin ? 'grid-cols-4' : 'grid-cols-3'} mb-6`}>
           <TabsTrigger value="profile">Profile Details</TabsTrigger>
+          <TabsTrigger value="password">Password</TabsTrigger>
           <TabsTrigger value="scripts">My Scripts</TabsTrigger>
+          {user.isAdmin && <TabsTrigger value="admin"><Shield className="mr-2 h-4 w-4" /> Admin</TabsTrigger>}
         </TabsList>
         
         {/* Profile Tab */}
@@ -181,6 +185,11 @@ export default function ProfilePage() {
             </form>
           </Card>
         </TabsContent>
+
+        {/* Password Tab */}
+        <TabsContent value="password">
+          <ChangePasswordForm />
+        </TabsContent>
         
         {/* My Scripts Tab */}
         <TabsContent value="scripts">
@@ -210,6 +219,30 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        {/* Admin Panel Tab - Only for admin users */}
+        {user.isAdmin && (
+          <TabsContent value="admin">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="mr-2 h-5 w-5 text-primary" />
+                  Admin Panel
+                </CardTitle>
+                <CardDescription>
+                  Administrator-only functions
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-8">
+                <div>
+                  <h3 className="text-lg font-medium mb-4">Create New Admin User</h3>
+                  <CreateAdminForm />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
