@@ -8,6 +8,13 @@ import { User, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+type ProfileUpdateData = {
+  bio?: string;
+  email?: string;
+  avatarUrl?: string;
+  discordUsername?: string;
+};
+
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
@@ -15,6 +22,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<User, Error, InsertUser>;
+  updateProfileMutation: UseMutationResult<User, Error, ProfileUpdateData>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -93,6 +101,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const updateProfileMutation = useMutation({
+    mutationFn: async (profileData: ProfileUpdateData) => {
+      const res = await apiRequest("PUT", "/api/profile", profileData);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/user"], data.user);
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Profile update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <AuthContext.Provider
       value={{
@@ -102,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        updateProfileMutation,
       }}
     >
       {children}
