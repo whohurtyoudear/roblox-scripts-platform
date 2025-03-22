@@ -8,6 +8,7 @@ import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
 import UploadScriptPage from "@/pages/upload-script-page";
 import PrivacyPolicy from "@/pages/privacy-policy";
+import AdminDashboard from "@/pages/admin-dashboard";
 import { useState, useEffect } from "react";
 import { Script } from "@shared/schema";
 import ScriptDetailModal from "./components/ScriptDetailModal";
@@ -105,6 +106,10 @@ function Router() {
         <ProtectedRoute 
           path="/upload" 
           component={UploadScriptPage} 
+        />
+        <ProtectedRoute 
+          path="/admin" 
+          component={AdminDashboard} 
         />
         <Route path="/auth" component={AuthPage} />
         <Route path="/privacy-policy" component={PrivacyPolicy} />
