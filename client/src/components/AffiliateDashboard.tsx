@@ -372,7 +372,13 @@ export default function AffiliateDashboard() {
                             rel="noopener noreferrer"
                             className="text-primary hover:underline flex items-center gap-1 text-sm"
                           >
-                            {new URL(link.targetUrl).hostname}
+                            {(() => {
+                              try {
+                                return new URL(link.targetUrl).hostname;
+                              } catch (e) {
+                                return link.targetUrl;
+                              }
+                            })()}
                             <ExternalLink className="h-3 w-3" />
                           </a>
                         </TableCell>

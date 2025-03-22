@@ -194,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...user, 
           password: '[HIDDEN]' // Never expose passwords
         }));
-      return res.json(users);
+      return res.json({ users });
     } catch (error) {
       console.error('Failed to fetch users:', error);
       return res.status(500).json({ message: 'Failed to fetch users' });
