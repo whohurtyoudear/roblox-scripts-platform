@@ -75,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         code: string;
         gameLink: string | null;
         gameType: string | null;
-        category: number;
+        category: number | null;
         tags: Array<{id: number, name: string, slug: string}>;
         views: number;
         copies: number;

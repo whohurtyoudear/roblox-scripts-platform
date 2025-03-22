@@ -45,6 +45,7 @@ const Header = () => {
           <div className="hidden md:flex gap-6 items-center">
             <Link href="/" className="font-medium hover:text-primary transition-colors">Home</Link>
             <a href="#scripts" className="font-medium hover:text-primary transition-colors">Scripts</a>
+            <Link href="/api-docs" className="font-medium hover:text-primary transition-colors">API</Link>
             <a href="https://discord.gg/zM3V4J98m6" target="_blank" rel="noopener noreferrer" className="font-medium hover:text-primary transition-colors">Join Discord</a>
             <a href="#" className="font-medium hover:text-primary transition-colors">About</a>
             
@@ -120,6 +121,7 @@ const Header = () => {
             <div className="flex flex-col gap-4 pb-4">
               <Link href="/" className="font-medium hover:text-primary transition-colors">Home</Link>
               <a href="#scripts" className="font-medium hover:text-primary transition-colors">Scripts</a>
+              <Link href="/api-docs" className="font-medium hover:text-primary transition-colors">API</Link>
               <a href="https://discord.gg/zM3V4J98m6" target="_blank" rel="noopener noreferrer" className="font-medium hover:text-primary transition-colors">Join Discord</a>
               <a href="#" className="font-medium hover:text-primary transition-colors">About</a>
               
