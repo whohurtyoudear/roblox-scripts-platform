@@ -1362,7 +1362,7 @@ export class MemStorage implements IStorage {
     
     // Award reputation points for achievement
     const achievement = this.achievements.get(userAchievement.achievementId);
-    if (achievement) {
+    if (achievement && achievement.points !== null) {
       this.updateUserReputation(userAchievement.userId, achievement.points);
     }
     
@@ -1377,7 +1377,7 @@ export class MemStorage implements IStorage {
   async getUnseenAchievements(userId: number): Promise<Achievement[]> {
     // Get achievements that haven't been marked as seen
     const achievementIds = Array.from(this.userAchievements.values())
-      .filter(ua => ua.userId === userId && !ua.seenAt)
+      .filter(ua => ua.userId === userId && ua.seenAt === null)
       .map(ua => ua.achievementId);
     
     return Array.from(this.achievements.values())

@@ -284,10 +284,10 @@ export const achievements = pgTable("achievements", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description").notNull(),
-  iconUrl: text("icon_url").notNull(),
-  type: text("type").notNull(), // e.g., 'upload', 'favorite', 'comment', 'rating'
-  threshold: integer("threshold").notNull(), // Number required to earn (e.g., 5 uploads)
+  imageUrl: text("image_url").notNull(),
+  criteria: text("criteria").notNull(), // Description of what's needed to earn
   points: integer("points").default(10), // Reputation points awarded
+  isEnabled: boolean("is_enabled").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -304,16 +304,16 @@ export const userAchievements = pgTable("user_achievements", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   achievementId: integer("achievement_id").notNull().references(() => achievements.id),
-  earnedAt: timestamp("earned_at").defaultNow().notNull(),
-  notified: boolean("notified").default(false),
+  awardedAt: timestamp("awarded_at").defaultNow().notNull(),
+  seenAt: timestamp("seen_at"),
 }, (t) => ({
   uniqueUserAchievement: uniqueIndex("unique_user_achievement").on(t.userId, t.achievementId),
 }));
 
 export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({
   id: true,
-  earnedAt: true,
-  notified: true,
+  awardedAt: true,
+  seenAt: true,
 });
 
 export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
