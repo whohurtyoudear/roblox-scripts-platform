@@ -29,6 +29,8 @@ export interface IStorage {
   searchScripts(query: string): Promise<Script[]>;
   createScript(script: InsertScript, userId?: number): Promise<Script>;
   getUserScripts(userId: number): Promise<Script[]>;
+  updateScript(id: number, scriptData: Partial<Omit<Script, "id">>): Promise<Script | undefined>;
+  deleteScript(id: number): Promise<boolean>;
   
   // User operations
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -95,12 +97,17 @@ export class MemStorage implements IStorage {
     }
     
     const script: Script = { 
-      ...insertScript, 
-      id, 
-      userId: userId || null, 
-      isApproved: true,
+      id,
+      title: insertScript.title,
+      description: insertScript.description,
+      code: insertScript.code,
+      imageUrl: insertScript.imageUrl,
+      gameType: insertScript.gameType || null, 
+      gameLink: insertScript.gameLink || null,
       discordLink: insertScript.discordLink || null,
-      lastUpdated: lastUpdated
+      lastUpdated: lastUpdated,
+      userId: userId || null, 
+      isApproved: true
     };
     this.scripts.set(id, script);
     return script;
@@ -108,6 +115,19 @@ export class MemStorage implements IStorage {
 
   async getUserScripts(userId: number): Promise<Script[]> {
     return Array.from(this.scripts.values()).filter(script => script.userId === userId);
+  }
+  
+  async updateScript(id: number, scriptData: Partial<Omit<Script, "id">>): Promise<Script | undefined> {
+    const script = this.scripts.get(id);
+    if (!script) return undefined;
+    
+    const updatedScript: Script = { ...script, ...scriptData };
+    this.scripts.set(id, updatedScript);
+    return updatedScript;
+  }
+  
+  async deleteScript(id: number): Promise<boolean> {
+    return this.scripts.delete(id);
   }
 
   // User operations
@@ -131,7 +151,8 @@ export class MemStorage implements IStorage {
       avatarUrl: userData.avatarUrl || "/images/default-avatar.png",
       createdAt: new Date(),
       bio: userData.bio || "",
-      discordUsername: userData.discordUsername || null
+      discordUsername: userData.discordUsername || null,
+      isAdmin: userData.isAdmin || false
     };
     
     this.users.set(id, user);
@@ -242,7 +263,19 @@ export class MemStorage implements IStorage {
       email: "demo@example.com",
       avatarUrl: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300&q=80",
       bio: "Just a demo user who loves Roblox scripting!",
-      discordUsername: "demo#1234"
+      discordUsername: "demo#1234",
+      isAdmin: false
+    });
+    
+    // Create an admin user
+    await this.createUser({
+      username: "admin",
+      password: "admin123",
+      email: "admin@devscripts.com",
+      avatarUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300&q=80",
+      bio: "Administrator of DevScripts platform",
+      discordUsername: "admin#0000",
+      isAdmin: true
     });
   }
 }

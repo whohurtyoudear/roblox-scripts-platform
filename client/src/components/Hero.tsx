@@ -21,7 +21,7 @@ const Hero = () => {
             Browse Scripts
           </a>
           <a 
-            href="https://discord.gg/devscripts" 
+            href="https://discord.gg/zM3V4J98m6" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="inline-flex items-center justify-center gap-2 bg-transparent text-white border border-[#94a3b8] py-3 px-6 rounded-lg font-medium transition-all hover:-translate-y-1 hover:border-primary hover:text-primary"
