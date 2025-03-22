@@ -31,13 +31,16 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const {
-    data: user,
+    data,
     error,
     isLoading,
-  } = useQuery<User | undefined, Error>({
+  } = useQuery<{user: User} | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
+  
+  // Extract user from response which has {user: User} format
+  const user = data?.user;
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
@@ -45,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (data: {user: User}) => {
-      queryClient.setQueryData(["/api/user"], data.user);
+      queryClient.setQueryData(["/api/user"], data);
       toast({
         title: "Login successful",
         description: `Welcome back, ${data.user.username}!`,
@@ -66,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (data: {user: User}) => {
-      queryClient.setQueryData(["/api/user"], data.user);
+      queryClient.setQueryData(["/api/user"], data);
       toast({
         title: "Registration successful",
         description: `Welcome, ${data.user.username}!`,
@@ -107,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     onSuccess: (data: {user: User}) => {
-      queryClient.setQueryData(["/api/user"], data.user);
+      queryClient.setQueryData(["/api/user"], data);
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
