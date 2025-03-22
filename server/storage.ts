@@ -154,7 +154,7 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       bio: userData.bio || "",
       discordUsername: userData.discordUsername || null,
-      isAdmin: userData.isAdmin || false
+      role: userData.role || "user"
     };
     
     this.users.set(id, user);
@@ -277,7 +277,18 @@ export class MemStorage implements IStorage {
       avatarUrl: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300&q=80",
       bio: "Just a demo user who loves Roblox scripting!",
       discordUsername: "demo#1234",
-      isAdmin: false
+      role: "user"
+    });
+    
+    // Create a moderator user
+    await this.createUser({
+      username: "moderator",
+      password: "moderator123",
+      email: "mod@devscripts.com",
+      avatarUrl: "https://images.unsplash.com/photo-1603415526960-f7e0328c63b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300&q=80",
+      bio: "Moderator of DevScripts platform",
+      discordUsername: "mod#1234",
+      role: "moderator"
     });
     
     // Create an admin user
@@ -288,7 +299,7 @@ export class MemStorage implements IStorage {
       avatarUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300&q=80",
       bio: "Administrator of DevScripts platform",
       discordUsername: "admin#0000",
-      isAdmin: true
+      role: "admin"
     });
   }
 }

@@ -14,10 +14,18 @@ const isAuthenticated = (req: Request, res: any, next: any) => {
 
 // Middleware to check if user is an admin
 const isAdmin = (req: Request, res: any, next: any) => {
-  if (req.isAuthenticated() && req.user?.isAdmin) {
+  if (req.isAuthenticated() && req.user?.role === 'admin') {
     return next();
   }
   return res.status(403).json({ message: 'Admin access required' });
+};
+
+// Middleware to check if user is a moderator or admin (can delete scripts)
+const isModeratorOrAdmin = (req: Request, res: any, next: any) => {
+  if (req.isAuthenticated() && (req.user?.role === 'admin' || req.user?.role === 'moderator')) {
+    return next();
+  }
+  return res.status(403).json({ message: 'Moderator or admin access required' });
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -116,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is the script owner or an admin
       const isOwner = script.userId === req.user!.id;
-      const isUserAdmin = req.user!.isAdmin;
+      const isUserAdmin = req.user!.role === 'admin';
       
       if (!isOwner && !isUserAdmin) {
         return res.status(403).json({ message: 'You do not have permission to update this script' });
@@ -148,8 +156,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete script - accessible only by admin
-  app.delete('/api/scripts/:id', isAdmin, async (req, res) => {
+  // Delete script - accessible by moderators and admins
+  app.delete('/api/scripts/:id', isModeratorOrAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
@@ -168,9 +176,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user admin status
-  app.get('/api/user/admin-status', isAuthenticated, (req, res) => {
-    return res.json({ isAdmin: !!req.user?.isAdmin });
+  // Get user role
+  app.get('/api/user/role', isAuthenticated, (req, res) => {
+    return res.json({ 
+      role: req.user?.role || 'user',
+      isAdmin: req.user?.role === 'admin',
+      isModerator: req.user?.role === 'moderator' || req.user?.role === 'admin'
+    });
+  });
+
+  // Admin endpoint to get all users (admin only)
+  app.get('/api/admin/users', isAdmin, async (req, res) => {
+    try {
+      // Simple implementation - in a real app, you'd have pagination
+      const users = Array.from(storage['users'].values())
+        .map(user => ({ 
+          ...user, 
+          password: '[HIDDEN]' // Never expose passwords
+        }));
+      return res.json(users);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      return res.status(500).json({ message: 'Failed to fetch users' });
+    }
+  });
+
+  // Admin endpoint to update user role (admin only)
+  app.put('/api/admin/users/:id/role', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+
+      const { role } = req.body;
+      if (!role || !['user', 'moderator', 'admin'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role. Must be user, moderator, or admin' });
+      }
+
+      // Prevent changing own role (for safety)
+      if (id === req.user!.id) {
+        return res.status(403).json({ message: 'Cannot change your own role' });
+      }
+
+      const updatedUser = await storage.updateUser(id, { role });
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      return res.json({ 
+        message: `User role updated to ${role}`,
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error('Failed to update user role:', error);
+      return res.status(500).json({ message: 'Failed to update user role' });
+    }
+  });
+
+  // Admin endpoint to create a new moderator (admin only)
+  app.post('/api/admin/moderator', isAdmin, async (req, res) => {
+    try {
+      const { username, password, email } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required' });
+      }
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Username already exists' });
+      }
+      
+      // Create moderator account
+      const newModerator = await storage.createUser({
+        username,
+        password,
+        email,
+        role: 'moderator',
+        bio: 'Moderator account',
+        avatarUrl: "https://images.unsplash.com/photo-1603415526960-f7e0328c63b1?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300&q=80",
+      });
+      
+      return res.status(201).json({
+        message: 'Moderator account created successfully',
+        user: { ...newModerator, password: '[HIDDEN]' } 
+      });
+    } catch (error) {
+      console.error('Failed to create moderator:', error);
+      return res.status(500).json({ message: 'Failed to create moderator' });
+    }
   });
 
   const httpServer = createServer(app);
