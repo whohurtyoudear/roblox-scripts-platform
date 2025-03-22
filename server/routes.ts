@@ -385,13 +385,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin endpoint to get all users (admin only)
   app.get('/api/admin/users', isAdmin, async (req, res) => {
     try {
-      // Simple implementation - in a real app, you'd have pagination
-      const users = Array.from(storage['users'].values())
-        .map(user => ({ 
-          ...user, 
-          password: '[HIDDEN]' // Never expose passwords
-        }));
-      return res.json({ users });
+      // Get all users using the storage interface
+      const users = await storage.getAllUsers();
+      // Map to hide passwords
+      const sanitizedUsers = users.map(user => ({ 
+        ...user, 
+        password: '[HIDDEN]' // Never expose passwords
+      }));
+      return res.json({ users: sanitizedUsers });
     } catch (error) {
       console.error('Failed to fetch users:', error);
       return res.status(500).json({ message: 'Failed to fetch users' });
