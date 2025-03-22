@@ -54,6 +54,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Script not found' });
       }
       
+      // Increment view count
+      await storage.incrementScriptViews(id);
+      
       return res.json(script);
     } catch (error) {
       return res.status(500).json({ message: 'Failed to fetch script' });
@@ -78,6 +81,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(scripts);
     } catch (error) {
       return res.status(500).json({ message: 'Failed to fetch user scripts' });
+    }
+  });
+  
+  // User favorites
+  app.get('/api/user/favorites', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const favoriteScripts = await storage.getFavoritesByUser(userId);
+      return res.json(favoriteScripts);
+    } catch (error) {
+      console.error('Failed to fetch user favorites:', error);
+      return res.status(500).json({ message: 'Failed to fetch user favorites' });
+    }
+  });
+  
+  app.post('/api/scripts/:id/favorite', isAuthenticated, async (req, res) => {
+    try {
+      const scriptId = parseInt(req.params.id, 10);
+      const userId = req.user!.id;
+      
+      if (isNaN(scriptId)) {
+        return res.status(400).json({ message: 'Invalid script ID' });
+      }
+      
+      // Check if script exists
+      const script = await storage.getScriptById(scriptId);
+      if (!script) {
+        return res.status(404).json({ message: 'Script not found' });
+      }
+      
+      // Check if already favorited
+      const isFavorite = await storage.isFavorite(userId, scriptId);
+      if (isFavorite) {
+        return res.status(400).json({ message: 'Script is already in favorites' });
+      }
+      
+      // Add to favorites
+      const favorite = await storage.addFavorite({
+        userId,
+        scriptId
+      });
+      
+      return res.status(201).json({ message: 'Added to favorites', favorite });
+    } catch (error) {
+      console.error('Failed to add to favorites:', error);
+      return res.status(500).json({ message: 'Failed to add to favorites' });
+    }
+  });
+  
+  app.delete('/api/scripts/:id/favorite', isAuthenticated, async (req, res) => {
+    try {
+      const scriptId = parseInt(req.params.id, 10);
+      const userId = req.user!.id;
+      
+      if (isNaN(scriptId)) {
+        return res.status(400).json({ message: 'Invalid script ID' });
+      }
+      
+      // Check if favorited
+      const isFavorite = await storage.isFavorite(userId, scriptId);
+      if (!isFavorite) {
+        return res.status(400).json({ message: 'Script is not in favorites' });
+      }
+      
+      // Remove from favorites
+      await storage.removeFavorite(userId, scriptId);
+      
+      return res.json({ message: 'Removed from favorites' });
+    } catch (error) {
+      console.error('Failed to remove from favorites:', error);
+      return res.status(500).json({ message: 'Failed to remove from favorites' });
+    }
+  });
+  
+  // Script copy count tracking
+  app.post('/api/scripts/:id/copy', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid script ID' });
+      }
+      
+      // Increment copy count
+      await storage.incrementScriptCopies(id);
+      
+      return res.json({ message: 'Copy count incremented' });
+    } catch (error) {
+      console.error('Failed to increment copy count:', error);
+      return res.status(500).json({ message: 'Failed to increment copy count' });
     }
   });
 
