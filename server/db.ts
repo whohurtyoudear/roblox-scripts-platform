@@ -15,14 +15,22 @@ try {
     throw new Error('DATABASE_URL environment variable is required');
   }
   
-  // Set connection options
+  // Set connection options with improved SSL handling
   const options = {
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: { rejectUnauthorized: false }, // Always use SSL with rejectUnauthorized:false for Neon database
     max: 10, // Maximum number of connections
     idle_timeout: 30, // Idle connection timeout in seconds
   };
   
-  const queryClient = postgres(process.env.DATABASE_URL, options);
+  // Add 'sslmode=require' explicitly to the connection URL if needed
+  let connectionUrl = process.env.DATABASE_URL || '';
+  if (connectionUrl && !connectionUrl.includes('sslmode=')) {
+    connectionUrl += connectionUrl.includes('?') 
+      ? '&sslmode=require' 
+      : '?sslmode=require';
+  }
+  
+  const queryClient = postgres(connectionUrl, options);
   
   // Create Drizzle instance using the connection
   db = drizzle(queryClient, { schema });
@@ -42,7 +50,12 @@ try {
     console.log('Attempting to connect to fallback database...');
     // Use environment variables if available, otherwise use defaults
     const fallbackUrl = process.env.FALLBACK_DATABASE_URL || 'postgres://localhost:5432/postgres';
-    const fallbackOptions = { ssl: false };
+    // For local development, we don't need SSL
+    const fallbackOptions = { 
+      ssl: false,
+      max: 10,
+      idle_timeout: 30
+    };
     
     const queryClient = postgres(fallbackUrl, fallbackOptions);
     db = drizzle(queryClient, { schema });
