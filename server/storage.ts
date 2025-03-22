@@ -13,6 +13,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { db } from "./db";
 
 const scryptAsync = promisify(scrypt);
 
@@ -2459,15 +2460,84 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getScriptRating(scriptId: number): Promise<number> { 
-    return 0; 
+    try {
+      const result = await db.query(
+        'SELECT AVG(value) as avg_rating FROM ratings WHERE script_id = $1',
+        [scriptId]
+      );
+      return result.rows[0]?.avg_rating || 0;
+    } catch (error) {
+      console.error('Error getting script rating:', error);
+      return 0;
+    }
   }
   
   async rateScript(rating: InsertRating): Promise<Rating> { 
-    throw new Error("Method not implemented."); 
+    try {
+      // Check if user has already rated this script
+      const existingRating = await this.getUserRating(rating.userId, rating.scriptId);
+      
+      if (existingRating) {
+        // Update existing rating
+        const result = await db.query(
+          'UPDATE ratings SET value = $1 WHERE user_id = $2 AND script_id = $3 RETURNING *',
+          [rating.value, rating.userId, rating.scriptId]
+        );
+        
+        // Also update the script's average rating
+        await this.updateScriptAverageRating(rating.scriptId);
+        
+        return result.rows[0];
+      } else {
+        // Insert new rating
+        const result = await db.query(
+          'INSERT INTO ratings (user_id, script_id, value) VALUES ($1, $2, $3) RETURNING *',
+          [rating.userId, rating.scriptId, rating.value]
+        );
+        
+        // Update the script's average rating
+        await this.updateScriptAverageRating(rating.scriptId);
+        
+        return result.rows[0];
+      }
+    } catch (error) {
+      console.error('Error rating script:', error);
+      throw new Error('Failed to submit rating');
+    }
+  }
+  
+  // Helper method to update a script's average rating
+  private async updateScriptAverageRating(scriptId: number): Promise<void> {
+    try {
+      const avgRatingResult = await db.query(
+        'SELECT AVG(value) as avg_rating, COUNT(*) as count FROM ratings WHERE script_id = $1',
+        [scriptId]
+      );
+      
+      const avgRating = avgRatingResult.rows[0]?.avg_rating || 0;
+      const ratingCount = avgRatingResult.rows[0]?.count || 0;
+      
+      // Update the script with the new average rating and count
+      await db.query(
+        'UPDATE scripts SET avg_rating = $1, rating_count = $2 WHERE id = $3',
+        [avgRating, ratingCount, scriptId]
+      );
+    } catch (error) {
+      console.error('Error updating script average rating:', error);
+    }
   }
   
   async getUserRating(userId: number, scriptId: number): Promise<Rating | undefined> { 
-    return undefined; 
+    try {
+      const result = await db.query(
+        'SELECT * FROM ratings WHERE user_id = $1 AND script_id = $2',
+        [userId, scriptId]
+      );
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error getting user rating:', error);
+      return undefined;
+    }
   }
   
   async logActivity(userId: number | null, action: string, details: any, ipAddress?: string, userAgent?: string): Promise<void> { }
