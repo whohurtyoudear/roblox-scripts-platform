@@ -112,23 +112,40 @@ const ScriptCard = ({ script, onScriptDetail, showNotification }: ScriptCardProp
         <h3 className="text-xl font-semibold mb-2 text-primary">{script.title}</h3>
         
         {/* Game Type or Link Display */}
-        <div className="flex items-center mb-2">
-          <span className="text-xs font-medium text-muted-foreground mr-2">Game:</span>
-          {script.gameLink ? (
-            <a 
-              href={script.gameLink} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {getGameName(script.gameLink)} <ExternalLink className="h-3 w-3" />
-            </a>
-          ) : (
-            <span className="text-xs text-white bg-primary/20 px-2 py-0.5 rounded-full">
-              {script.gameType}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center">
+            <span className="text-xs font-medium text-muted-foreground mr-2">Game:</span>
+            {script.gameLink ? (
+              <a 
+                href={script.gameLink} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {getGameName(script.gameLink)} <ExternalLink className="h-3 w-3" />
+              </a>
+            ) : (
+              <span className="text-xs text-white bg-primary/20 px-2 py-0.5 rounded-full">
+                {script.gameType}
+              </span>
+            )}
+          </div>
+          
+          {/* Ratings Display */}
+          <div className="flex items-center gap-1">
+            <StarRating
+              rating={scriptRating?.avgRating || 0}
+              size={14}
+              readOnly={true}
+            />
+            <span className="text-yellow-400 text-xs">
+              {scriptRating?.avgRating ? scriptRating.avgRating.toFixed(1) : '0.0'}
             </span>
-          )}
+            <span className="text-gray-400 text-xs">
+              ({scriptRating?.ratingCount || 0})
+            </span>
+          </div>
         </div>
         
         <p className="text-[#94a3b8] mb-6 text-sm line-clamp-3">
