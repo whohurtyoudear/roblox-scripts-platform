@@ -1665,10 +1665,33 @@ export class DatabaseStorage implements IStorage {
   
   constructor() {
     // Create a session store that uses our Postgres database
-    this.sessionStore = new PostgresSessionStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true
-    });
+    try {
+      if (!process.env.DATABASE_URL) {
+        console.error('DATABASE_URL is not defined for session store');
+        // Fall back to memory store if DATABASE_URL is not available
+        const MemoryStore = createMemoryStore(session);
+        this.sessionStore = new MemoryStore({
+          checkPeriod: 86400000 // prune expired entries every 24h
+        });
+        console.log('Using memory session store as fallback');
+      } else {
+        this.sessionStore = new PostgresSessionStore({
+          conString: process.env.DATABASE_URL,
+          createTableIfMissing: true,
+          tableName: 'session', // Make sure table name is defined
+          pruneSessionInterval: 60 * 15 // Prune expired sessions every 15 minutes
+        });
+        console.log('Using PostgreSQL session store');
+      }
+    } catch (error) {
+      console.error('Failed to initialize PostgreSQL session store:', error);
+      // Fall back to memory store if PostgreSQL session store fails
+      const MemoryStore = createMemoryStore(session);
+      this.sessionStore = new MemoryStore({
+        checkPeriod: 86400000 // prune expired entries every 24h
+      });
+      console.log('Using memory session store as fallback due to error');
+    }
   }
   
   // SCRIPT OPERATIONS
