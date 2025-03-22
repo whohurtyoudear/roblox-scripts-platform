@@ -29,6 +29,11 @@ const isModeratorOrAdmin = (req: Request, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add a redirect for index.html to the root path
+  app.get('/index.html', (req, res) => {
+    res.redirect('/');
+  });
+
   // Setup authentication
   setupAuth(app);
 
