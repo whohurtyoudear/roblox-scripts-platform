@@ -32,6 +32,11 @@ function Router() {
   // Track page navigation to handle popunder ads
   useEffect(() => {
     // On each navigation, check if we need to show an ad
+    // Don't show popunder on auth page
+    if (location === "/auth" || location.startsWith("/auth")) {
+      return; // Skip loading popunder script on auth page
+    }
+    
     // This is already handled by our script in index.html, but we call it here
     // to ensure it's checked on each navigation event
     if (typeof window !== 'undefined' && window.loadPopunderScript) {

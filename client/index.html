@@ -22,6 +22,11 @@
       // Check if popunder has been shown this session
       const popunderShown = sessionStorage.getItem('popunderShown');
       
+      // Don't show popunder on auth page
+      if (window.location.pathname.includes('/auth')) {
+        return; // Skip loading popunder on auth page
+      }
+      
       if (!popunderShown) {
         // Load the script
         const script = document.createElement('script');
@@ -36,7 +41,10 @@
     
     // Load on page load with a small delay to ensure the page is fully loaded
     window.addEventListener('load', function() {
-      setTimeout(window.loadPopunderScript, 1000);
+      // Skip loading on auth page
+      if (!window.location.pathname.includes('/auth')) {
+        setTimeout(window.loadPopunderScript, 1000);
+      }
     });
   </script>
 </head>
@@ -44,6 +52,17 @@
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
   <!-- Work.ink Popup Script -->
-  <script src="https://cdn.work.ink/js/redirect.js?id=183" data-url="https://work.ink/direct/183" data-max="3"></script>
+  <script type="text/javascript">
+    // Only load Work.ink popup on non-auth pages
+    window.addEventListener('load', function() {
+      if (!window.location.pathname.includes('/auth')) {
+        const script = document.createElement('script');
+        script.src = "https://cdn.work.ink/js/redirect.js?id=183";
+        script.setAttribute("data-url", "https://work.ink/direct/183");
+        script.setAttribute("data-max", "3");
+        document.body.appendChild(script);
+      }
+    });
+  </script>
 </body>
 </html>
