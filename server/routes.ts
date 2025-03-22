@@ -29,6 +29,11 @@ const isModeratorOrAdmin = (req: Request, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add a test API endpoint to confirm API routes are working
+  app.get('/api/test', (req, res) => {
+    res.json({ message: 'API is working!' });
+  });
+  
   // Add a redirect for index.html to the root path
   app.get('/index.html', (req, res) => {
     res.redirect('/');

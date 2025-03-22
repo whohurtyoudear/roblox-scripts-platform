@@ -9,6 +9,7 @@ import ProfilePage from "@/pages/profile-page";
 import UploadScriptPage from "@/pages/upload-script-page";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import AdminDashboard from "@/pages/admin-dashboard";
+import ApiTester from "@/pages/api-tester";
 import { useState, useEffect } from "react";
 import { Script } from "@shared/schema";
 import ScriptDetailModal from "./components/ScriptDetailModal";

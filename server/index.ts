@@ -37,6 +37,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Register API routes FIRST to ensure they have priority
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -47,9 +48,13 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Explicitly avoid the catch-all Vite route for API endpoints
+  app.use('/api', (req, res) => {
+    // If we get here, no API route was matched
+    res.status(404).json({ message: 'API endpoint not found' });
+  });
+
+  // Setup Vite AFTER all API routes to prevent catch-all interference
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
