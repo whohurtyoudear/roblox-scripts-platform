@@ -1483,7 +1483,8 @@ export class MemStorage implements IStorage {
     
     // 4. Reputable Member Achievement
     if (!await this.hasAchievement(userId, 4)) {
-      if (user.reputation >= 50) {
+      const userReputation = user.reputation !== null ? user.reputation : 0;
+      if (userReputation >= 50) {
         // Create the achievement if it doesn't exist
         let achievement = await this.getAchievementById(4);
         if (!achievement) {

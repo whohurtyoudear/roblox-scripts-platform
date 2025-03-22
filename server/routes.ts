@@ -1197,6 +1197,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Achievement-related endpoints
+  app.get('/api/user/achievements', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const achievements = await storage.getUserAchievements(userId);
+      return res.json(achievements);
+    } catch (error) {
+      console.error('Failed to fetch user achievements:', error);
+      return res.status(500).json({ message: 'Failed to fetch user achievements' });
+    }
+  });
+
+  app.get('/api/user/achievements/unseen', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const unseenAchievements = await storage.getUnseenAchievements(userId);
+      return res.json(unseenAchievements);
+    } catch (error) {
+      console.error('Failed to fetch unseen achievements:', error);
+      return res.status(500).json({ message: 'Failed to fetch unseen achievements' });
+    }
+  });
+
+  app.post('/api/user/achievements/:id/seen', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const achievementId = parseInt(req.params.id, 10);
+      
+      if (isNaN(achievementId)) {
+        return res.status(400).json({ message: 'Invalid achievement ID' });
+      }
+      
+      await storage.markAchievementAsSeen(userId, achievementId);
+      return res.json({ message: 'Achievement marked as seen' });
+    } catch (error) {
+      console.error('Failed to mark achievement as seen:', error);
+      return res.status(500).json({ message: 'Failed to mark achievement as seen' });
+    }
+  });
+
+  app.post('/api/user/achievements/check', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const newAchievements = await storage.checkAndAwardAchievements(userId);
+      return res.json(newAchievements);
+    } catch (error) {
+      console.error('Failed to check for new achievements:', error);
+      return res.status(500).json({ message: 'Failed to check for new achievements' });
+    }
+  });
+  
+  // Admin-only achievement management endpoints
+  app.get('/api/admin/achievements', isAdmin, async (req, res) => {
+    try {
+      const achievements = await storage.getAllAchievements();
+      return res.json(achievements);
+    } catch (error) {
+      console.error('Failed to fetch all achievements:', error);
+      return res.status(500).json({ message: 'Failed to fetch all achievements' });
+    }
+  });
+  
+  app.post('/api/admin/achievements', isAdmin, async (req, res) => {
+    try {
+      const { name, description, imageUrl, criteria, points, isEnabled } = req.body;
+      
+      if (!name || !description || !imageUrl || !criteria) {
+        return res.status(400).json({ message: 'Name, description, image URL, and criteria are required' });
+      }
+      
+      const newAchievement = await storage.createAchievement({
+        name,
+        description,
+        imageUrl,
+        criteria,
+        points: points || 10,
+        isEnabled: isEnabled !== undefined ? isEnabled : true
+      });
+      
+      return res.status(201).json(newAchievement);
+    } catch (error) {
+      console.error('Failed to create achievement:', error);
+      return res.status(500).json({ message: 'Failed to create achievement' });
+    }
+  });
+  
+  app.patch('/api/admin/achievements/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid achievement ID' });
+      }
+      
+      const { name, description, imageUrl, criteria, points, isEnabled } = req.body;
+      const achievementData: Partial<Achievement> = {};
+      
+      if (name !== undefined) achievementData.name = name;
+      if (description !== undefined) achievementData.description = description;
+      if (imageUrl !== undefined) achievementData.imageUrl = imageUrl;
+      if (criteria !== undefined) achievementData.criteria = criteria;
+      if (points !== undefined) achievementData.points = points;
+      if (isEnabled !== undefined) achievementData.isEnabled = isEnabled;
+      
+      const updatedAchievement = await storage.updateAchievement(id, achievementData);
+      
+      if (!updatedAchievement) {
+        return res.status(404).json({ message: 'Achievement not found' });
+      }
+      
+      return res.json(updatedAchievement);
+    } catch (error) {
+      console.error('Failed to update achievement:', error);
+      return res.status(500).json({ message: 'Failed to update achievement' });
+    }
+  });
+  
+  app.delete('/api/admin/achievements/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid achievement ID' });
+      }
+      
+      const result = await storage.deleteAchievement(id);
+      
+      if (!result) {
+        return res.status(404).json({ message: 'Achievement not found' });
+      }
+      
+      return res.json({ message: 'Achievement deleted successfully' });
+    } catch (error) {
+      console.error('Failed to delete achievement:', error);
+      return res.status(500).json({ message: 'Failed to delete achievement' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
