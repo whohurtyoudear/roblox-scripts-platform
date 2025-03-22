@@ -13,7 +13,6 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import session from "express-session";
 import createMemoryStore from "memorystore";
-import { db } from "./db";
 
 const scryptAsync = promisify(scrypt);
 
@@ -2461,45 +2460,54 @@ export class DatabaseStorage implements IStorage {
   
   async getScriptRating(scriptId: number): Promise<number> { 
     try {
-      const result = await db.query(
-        'SELECT AVG(value) as avg_rating FROM ratings WHERE script_id = $1',
-        [scriptId]
-      );
-      return result.rows[0]?.avg_rating || 0;
+      const avgRating = await db
+        .select({ 
+          avgRating: drizzleSql`AVG(${ratings.value})` 
+        })
+        .from(ratings)
+        .where(eq(ratings.scriptId, scriptId));
+      
+      return avgRating[0]?.avgRating || 0;
     } catch (error) {
       console.error('Error getting script rating:', error);
       return 0;
     }
   }
   
-  async rateScript(rating: InsertRating): Promise<Rating> { 
+  async rateScript(ratingData: InsertRating): Promise<Rating> { 
     try {
       // Check if user has already rated this script
-      const existingRating = await this.getUserRating(rating.userId, rating.scriptId);
+      const existingRating = await this.getUserRating(ratingData.userId, ratingData.scriptId);
       
+      let result;
       if (existingRating) {
         // Update existing rating
-        const result = await db.query(
-          'UPDATE ratings SET value = $1 WHERE user_id = $2 AND script_id = $3 RETURNING *',
-          [rating.value, rating.userId, rating.scriptId]
-        );
-        
-        // Also update the script's average rating
-        await this.updateScriptAverageRating(rating.scriptId);
-        
-        return result.rows[0];
+        result = await db
+          .update(ratings)
+          .set({ value: ratingData.value })
+          .where(
+            and(
+              eq(ratings.userId, ratingData.userId),
+              eq(ratings.scriptId, ratingData.scriptId)
+            )
+          )
+          .returning();
       } else {
         // Insert new rating
-        const result = await db.query(
-          'INSERT INTO ratings (user_id, script_id, value) VALUES ($1, $2, $3) RETURNING *',
-          [rating.userId, rating.scriptId, rating.value]
-        );
-        
-        // Update the script's average rating
-        await this.updateScriptAverageRating(rating.scriptId);
-        
-        return result.rows[0];
+        result = await db
+          .insert(ratings)
+          .values({
+            userId: ratingData.userId,
+            scriptId: ratingData.scriptId,
+            value: ratingData.value,
+          })
+          .returning();
       }
+      
+      // Update the script's average rating and count
+      await this.updateScriptAverageRating(ratingData.scriptId);
+      
+      return result[0];
     } catch (error) {
       console.error('Error rating script:', error);
       throw new Error('Failed to submit rating');
@@ -2509,19 +2517,31 @@ export class DatabaseStorage implements IStorage {
   // Helper method to update a script's average rating
   private async updateScriptAverageRating(scriptId: number): Promise<void> {
     try {
-      const avgRatingResult = await db.query(
-        'SELECT AVG(value) as avg_rating, COUNT(*) as count FROM ratings WHERE script_id = $1',
-        [scriptId]
-      );
+      // Get average rating and count
+      const ratingStats = await db
+        .select({
+          avgRating: drizzleSql`AVG(${ratings.value})`,
+          count: drizzleSql`COUNT(*)`
+        })
+        .from(ratings)
+        .where(eq(ratings.scriptId, scriptId));
       
-      const avgRating = avgRatingResult.rows[0]?.avg_rating || 0;
-      const ratingCount = avgRatingResult.rows[0]?.count || 0;
+      // Convert the avg rating to a number and handle null cases
+      const avgRatingValue = typeof ratingStats[0]?.avgRating === 'number' 
+        ? ratingStats[0].avgRating 
+        : parseFloat(ratingStats[0]?.avgRating as string) || 0;
+      
+      const ratingCount = Number(ratingStats[0]?.count || 0);
       
       // Update the script with the new average rating and count
-      await db.query(
-        'UPDATE scripts SET avg_rating = $1, rating_count = $2 WHERE id = $3',
-        [avgRating, ratingCount, scriptId]
-      );
+      await db
+        .update(scripts)
+        .set({ 
+          avgRating: avgRatingValue, 
+          ratingCount: ratingCount 
+        })
+        .where(eq(scripts.id, scriptId));
+      
     } catch (error) {
       console.error('Error updating script average rating:', error);
     }
@@ -2529,11 +2549,18 @@ export class DatabaseStorage implements IStorage {
   
   async getUserRating(userId: number, scriptId: number): Promise<Rating | undefined> { 
     try {
-      const result = await db.query(
-        'SELECT * FROM ratings WHERE user_id = $1 AND script_id = $2',
-        [userId, scriptId]
-      );
-      return result.rows[0];
+      const result = await db
+        .select()
+        .from(ratings)
+        .where(
+          and(
+            eq(ratings.userId, userId),
+            eq(ratings.scriptId, scriptId)
+          )
+        )
+        .limit(1);
+      
+      return result[0];
     } catch (error) {
       console.error('Error getting user rating:', error);
       return undefined;
