@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
 import UploadScriptPage from "@/pages/upload-script-page";
+import PrivacyPolicy from "@/pages/privacy-policy";
 import { useState, useEffect } from "react";
 import { Script } from "@shared/schema";
 import ScriptDetailModal from "./components/ScriptDetailModal";
@@ -64,9 +65,9 @@ function Router() {
 
   // Create a function to render ad banners
   const renderAdBanners = () => {
-    // Don't show ad banners on the auth page
+    // Don't show ad banners on the auth page or privacy policy page
     const path = window.location.pathname;
-    if (path.includes("/auth")) return null;
+    if (path.includes("/auth") || path.includes("/privacy-policy")) return null;
     
     return (
       <div className="container mx-auto px-4 pt-4">
@@ -106,6 +107,7 @@ function Router() {
           component={UploadScriptPage} 
         />
         <Route path="/auth" component={AuthPage} />
+        <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route component={NotFound} />
       </Switch>
       
