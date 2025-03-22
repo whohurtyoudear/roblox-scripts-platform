@@ -201,6 +201,33 @@ export default function EnhancedUserManagement() {
       });
     },
   });
+  
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: { username: string; password: string; email?: string; role: string }) => {
+      return apiRequest('POST', '/api/admin/users', userData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({
+        title: 'User created',
+        description: `User ${newUsername} has been created successfully.`,
+      });
+      // Reset form
+      setNewUsername('');
+      setNewEmail('');
+      setNewPassword('');
+      setNewRole('user');
+      setShowAddUserDialog(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: `Failed to create user: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
 
   // Filter and paginate users
   const filteredUsers = data?.users?.filter((user: UserType) => {
@@ -318,7 +345,7 @@ export default function EnhancedUserManagement() {
               </SelectContent>
             </Select>
             
-            <Dialog>
+            <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
               <DialogTrigger asChild>
                 <Button size="sm" className="whitespace-nowrap">
                   <UserPlus className="h-4 w-4 mr-2" />
@@ -336,22 +363,41 @@ export default function EnhancedUserManagement() {
                 <form className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
-                    <Input id="username" placeholder="Enter username" />
+                    <Input 
+                      id="username" 
+                      placeholder="Enter username" 
+                      value={newUsername}
+                      onChange={(e) => setNewUsername(e.target.value)}
+                      required
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="email">Email (optional)</Label>
-                    <Input id="email" type="email" placeholder="Enter email" />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      placeholder="Enter email" 
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" placeholder="Create strong password" />
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      placeholder="Create strong password" 
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Select defaultValue="user">
+                    <Select value={newRole} onValueChange={setNewRole}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
@@ -365,8 +411,41 @@ export default function EnhancedUserManagement() {
                 </form>
                 
                 <DialogFooter>
-                  <Button variant="outline">Cancel</Button>
-                  <Button>Create User</Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowAddUserDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      if (!newUsername || !newPassword) {
+                        toast({
+                          title: "Error",
+                          description: "Username and password are required",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      
+                      createUserMutation.mutate({
+                        username: newUsername,
+                        password: newPassword,
+                        email: newEmail,
+                        role: newRole
+                      });
+                    }}
+                    disabled={createUserMutation.isPending}
+                  >
+                    {createUserMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      'Create User'
+                    )}
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
