@@ -892,7 +892,11 @@ export class MemStorage implements IStorage {
       .map(st => st.scriptId);
     
     return Array.from(this.scripts.values())
-      .filter(script => scriptIds.includes(script.id));
+      .filter(script => scriptIds.includes(script.id))
+      .map(script => ({
+        ...script,
+        createdAt: script.lastUpdated // Map lastUpdated to createdAt for backward compatibility
+      }));
   }
 
   async addTagToScript(scriptId: number, tagId: number): Promise<boolean> {
@@ -929,7 +933,11 @@ export class MemStorage implements IStorage {
       .map(fav => fav.scriptId);
     
     return Array.from(this.scripts.values())
-      .filter(script => scriptIds.includes(script.id));
+      .filter(script => scriptIds.includes(script.id))
+      .map(script => ({
+        ...script,
+        createdAt: script.lastUpdated // Map lastUpdated to createdAt for backward compatibility
+      }));
   }
 
   async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
