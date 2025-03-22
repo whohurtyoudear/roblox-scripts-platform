@@ -445,8 +445,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: 'Cannot delete your own account' });
       }
 
-      // In a real app, you would implement a delete user function
-      // For now, we'll just return a success message
+      // Delete the user from storage
+      const result = await storage.deleteUser(id);
+      
+      if (!result) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
       return res.json({ message: 'User deleted successfully' });
     } catch (error) {
       console.error('Failed to delete user:', error);
