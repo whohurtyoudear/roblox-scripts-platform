@@ -12,6 +12,14 @@ const isAuthenticated = (req: Request, res: any, next: any) => {
   return res.status(401).json({ message: 'Authentication required' });
 };
 
+// Middleware to check if user is an admin
+const isAdmin = (req: Request, res: any, next: any) => {
+  if (req.isAuthenticated() && req.user?.isAdmin) {
+    return next();
+  }
+  return res.status(403).json({ message: 'Admin access required' });
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
@@ -90,6 +98,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Failed to create script:', error);
       return res.status(500).json({ message: 'Failed to create script' });
     }
+  });
+
+  // Update script - accessible by script owner or admin
+  app.put('/api/scripts/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid script ID' });
+      }
+      
+      // Get the existing script
+      const script = await storage.getScriptById(id);
+      if (!script) {
+        return res.status(404).json({ message: 'Script not found' });
+      }
+      
+      // Check if user is the script owner or an admin
+      const isOwner = script.userId === req.user!.id;
+      const isUserAdmin = req.user!.isAdmin;
+      
+      if (!isOwner && !isUserAdmin) {
+        return res.status(403).json({ message: 'You do not have permission to update this script' });
+      }
+      
+      // Validate update data - accept any fields that are in the insertScriptSchema
+      const parseResult = insertScriptSchema.safeParse({
+        ...script, // Include existing values
+        ...req.body // Override with new values
+      });
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          message: 'Invalid script data', 
+          errors: parseResult.error.errors 
+        });
+      }
+      
+      // Update the script
+      const scriptData = parseResult.data;
+      const updatedScript = await storage.updateScript(id, {
+        ...scriptData,
+        lastUpdated: new Date() // Always update the lastUpdated timestamp
+      });
+      
+      return res.json(updatedScript);
+    } catch (error) {
+      console.error('Failed to update script:', error);
+      return res.status(500).json({ message: 'Failed to update script' });
+    }
+  });
+
+  // Delete script - accessible only by admin
+  app.delete('/api/scripts/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid script ID' });
+      }
+      
+      const result = await storage.deleteScript(id);
+      if (!result) {
+        return res.status(404).json({ message: 'Script not found or already deleted' });
+      }
+      
+      return res.status(200).json({ message: 'Script deleted successfully' });
+    } catch (error) {
+      console.error('Failed to delete script:', error);
+      return res.status(500).json({ message: 'Failed to delete script' });
+    }
+  });
+
+  // Get user admin status
+  app.get('/api/user/admin-status', isAuthenticated, (req, res) => {
+    return res.json({ isAdmin: !!req.user?.isAdmin });
   });
 
   const httpServer = createServer(app);

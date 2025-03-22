@@ -1,21 +1,50 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Script } from '@shared/schema';
 import { useClipboard } from '../hooks/useClipboard';
 import { format } from 'date-fns';
-import { X, ExternalLink, Copy, MessageSquare } from 'lucide-react';
+import { X, ExternalLink, Copy, MessageSquare, Trash, Edit, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface ScriptDetailModalProps {
   script: Script;
   onClose: () => void;
   showNotification: (message: string) => void;
+  onDelete?: () => void;
 }
 
-const ScriptDetailModal = ({ script, onClose, showNotification }: ScriptDetailModalProps) => {
+const ScriptDetailModal = ({ script, onClose, showNotification, onDelete }: ScriptDetailModalProps) => {
   const { copyToClipboard } = useClipboard();
+  const { user } = useAuth();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const deleteScriptMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/scripts/${script.id}`);
+    },
+    onSuccess: () => {
+      showNotification("Script deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ['/api/scripts'] });
+      onClose();
+      if (onDelete) onDelete();
+    },
+    onError: (error: Error) => {
+      showNotification(`Error: ${error.message}`);
+    }
+  });
 
   const handleCopy = () => {
     copyToClipboard(script.code);
     showNotification('Code copied to clipboard!');
+  };
+
+  const handleDelete = () => {
+    if (confirmDelete) {
+      deleteScriptMutation.mutate();
+    } else {
+      setConfirmDelete(true);
+    }
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -103,15 +132,54 @@ const ScriptDetailModal = ({ script, onClose, showNotification }: ScriptDetailMo
             </button>
           </div>
           
-          <div className="flex justify-between items-center">
-            <a 
-              href={script.discordLink || "https://discord.gg/zM3V4J98m6"} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="inline-flex items-center gap-2 bg-[#5865F2] text-white py-2 px-5 rounded-lg hover:bg-[#4752c4] transition-colors"
-            >
-              <MessageSquare className="h-4 w-4" /> Join Discord for Support
-            </a>
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <a 
+                href={script.discordLink || "https://discord.gg/zM3V4J98m6"} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="inline-flex items-center gap-2 bg-[#5865F2] text-white py-2 px-5 rounded-lg hover:bg-[#4752c4] transition-colors"
+              >
+                <MessageSquare className="h-4 w-4" /> Join Discord
+              </a>
+              
+              {/* Admin actions */}
+              {user?.isAdmin && (
+                <div className="flex items-center gap-2 ml-4">
+                  {confirmDelete ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleDelete}
+                        className="inline-flex items-center gap-1 bg-red-600 text-white py-2 px-3 rounded-lg hover:bg-red-700 transition-colors"
+                        disabled={deleteScriptMutation.isPending}
+                      >
+                        {deleteScriptMutation.isPending ? (
+                          <span>Deleting...</span>
+                        ) : (
+                          <>
+                            <Trash className="h-4 w-4" /> Confirm Delete
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(false)}
+                        className="inline-flex items-center gap-1 bg-slate-600 text-white py-2 px-3 rounded-lg hover:bg-slate-700 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleDelete}
+                      className="inline-flex items-center gap-1 bg-red-600 text-white py-2 px-3 rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <Trash className="h-4 w-4" /> Delete Script
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            
             <span className="text-[#94a3b8] text-sm">
               Last Updated: {format(new Date(script.lastUpdated), 'MMMM d, yyyy')}
             </span>
