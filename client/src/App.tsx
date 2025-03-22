@@ -11,9 +11,10 @@ import { useState, useEffect } from "react";
 import { Script } from "@shared/schema";
 import ScriptDetailModal from "./components/ScriptDetailModal";
 import Notification from "./components/Notification";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
-import AdBanner, { adBannerData } from "./components/AdBanner";
+import AdBanner from "./components/AdBanner";
+import BannerManagement from "./components/BannerManagement";
 import { useLocation } from "wouter";
 
 function Router() {
@@ -25,13 +26,13 @@ function Router() {
   });
   const [location] = useLocation();
   
-  // Track page navigation to handle social bar ads with 5-minute delay
+  // Track page navigation to handle popunder ads
   useEffect(() => {
     // On each navigation, check if we need to show an ad
     // This is already handled by our script in index.html, but we call it here
     // to ensure it's checked on each navigation event
-    if (typeof window !== 'undefined' && window.loadSocialBarScript) {
-      window.loadSocialBarScript();
+    if (typeof window !== 'undefined' && window.loadPopunderScript) {
+      window.loadPopunderScript();
     }
   }, [location]);
 
@@ -70,14 +71,10 @@ function Router() {
       <div className="container mx-auto px-4 pt-4">
         <div className="grid gap-4 md:grid-cols-2">
           <AdBanner 
-            imageUrl={adBannerData[0].imageUrl}
-            linkUrl={adBannerData[0].linkUrl}
-            altText={adBannerData[0].altText}
+            bannerId={1}
           />
           <AdBanner 
-            imageUrl={adBannerData[1].imageUrl}
-            linkUrl={adBannerData[1].linkUrl}
-            altText={adBannerData[1].altText}
+            bannerId={2}
           />
         </div>
       </div>

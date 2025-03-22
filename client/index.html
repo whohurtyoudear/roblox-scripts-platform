@@ -13,30 +13,28 @@
     gtag('js', new Date());
     gtag('config', 'G-R25BBEYTR1');
   </script>
-  <!-- Social Bar Ad Script with 5-minute delay -->
+  <!-- Popunder Script with max of 1 per session -->
   <script type="text/javascript">
     // Add to window object for access in React components
-    window.loadSocialBarScript = function() {
-      // Check if it's been 5 minutes since the last ad
-      const lastAdTime = localStorage.getItem('lastSocialBarAdTime');
-      const currentTime = new Date().getTime();
+    window.loadPopunderScript = function() {
+      // Check if popunder has been shown this session
+      const popunderShown = sessionStorage.getItem('popunderShown');
       
-      // If lastAdTime is null or it's been more than 5 minutes, show the ad
-      if (!lastAdTime || (currentTime - parseInt(lastAdTime)) > 5 * 60 * 1000) {
+      if (!popunderShown) {
         // Load the script
         const script = document.createElement('script');
         script.type = 'text/javascript';
-        script.src = '//pl26164109.effectiveratecpm.com/3b/33/ff/3b33fff6e012ac71bbc931b59f3e9d51.js';
+        script.src = '//pl26170619.effectiveratecpm.com/0f/c6/a0/0fc6a024ae5cdd4e432ebb17c3b839f4.js';
         document.head.appendChild(script);
         
-        // Update the last ad time
-        localStorage.setItem('lastSocialBarAdTime', currentTime.toString());
+        // Mark as shown for this session
+        sessionStorage.setItem('popunderShown', 'true');
       }
     }
     
     // Load on page load with a small delay to ensure the page is fully loaded
     window.addEventListener('load', function() {
-      setTimeout(window.loadSocialBarScript, 1000);
+      setTimeout(window.loadPopunderScript, 1000);
     });
   </script>
 </head>
@@ -44,6 +42,6 @@
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
   <!-- Work.ink Popup Script -->
-  <script src="https://cdn.work.ink/js/redirect.js?id=183" data-url="https://work.ink/direct/183" data-max="5"></script>
+  <script src="https://cdn.work.ink/js/redirect.js?id=183" data-url="https://work.ink/direct/183" data-max="3"></script>
 </body>
 </html>

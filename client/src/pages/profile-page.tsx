@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { Loader2, User, Mail, MessageSquare, MessagesSquare, Upload, Shield, Lock, UserCog } from "lucide-react";
+import { Loader2, User, Mail, MessageSquare, MessagesSquare, Upload, Shield, Lock, UserCog, Image } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import AdminUserManagement from "@/components/AdminUserManagement";
+import BannerManagement from "@/components/BannerManagement";
 
 export default function ProfilePage() {
   const { user, isLoading, updateProfileMutation } = useAuth();
@@ -223,21 +224,42 @@ export default function ProfilePage() {
         {/* Admin Panel Tab - Only for admin users */}
         {user.role === 'admin' && (
           <TabsContent value="admin">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Shield className="mr-2 h-5 w-5 text-primary" />
-                  Admin Panel
-                </CardTitle>
-                <CardDescription>
-                  Administrator-only functions
-                </CardDescription>
-              </CardHeader>
-              
-              <CardContent>
-                <AdminUserManagement />
-              </CardContent>
-            </Card>
+            <div className="space-y-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Shield className="mr-2 h-5 w-5 text-primary" />
+                    Admin Panel
+                  </CardTitle>
+                  <CardDescription>
+                    Administrator-only functions
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                  <Tabs defaultValue="users">
+                    <TabsList className="mb-6">
+                      <TabsTrigger value="users">
+                        <UserCog className="mr-2 h-4 w-4" />
+                        User Management
+                      </TabsTrigger>
+                      <TabsTrigger value="banners">
+                        <Image className="mr-2 h-4 w-4" />
+                        Banner Management
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="users">
+                      <AdminUserManagement />
+                    </TabsContent>
+                    
+                    <TabsContent value="banners">
+                      <BannerManagement />
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         )}
       </Tabs>
