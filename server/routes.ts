@@ -67,7 +67,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paginatedScripts = scripts.slice(offset, offset + limit);
       
       // Map to include only necessary fields for external use
-      const formattedScripts = paginatedScripts.map(script => ({
+      // Define the type for the formatted script with tags
+      interface FormattedScript {
+        id: number;
+        title: string;
+        description: string;
+        code: string;
+        gameLink: string | null;
+        gameType: string | null;
+        category: number;
+        tags: Array<{id: number, name: string, slug: string}>;
+        views: number;
+        copies: number;
+        avgRating: number;
+        lastUpdated: Date;
+      }
+      
+      const formattedScripts: FormattedScript[] = paginatedScripts.map(script => ({
         id: script.id,
         title: script.title,
         description: script.description,
@@ -75,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gameLink: script.gameLink || null,
         gameType: script.gameType || null,
         category: script.categoryId,
-        tags: [], // We'll need to add tag fetching here
+        tags: [], // Will be populated later
         views: script.views || 0,
         copies: script.copies || 0,
         avgRating: script.avgRating || 0,

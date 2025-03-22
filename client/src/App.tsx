@@ -10,7 +10,8 @@ import UploadScriptPage from "@/pages/upload-script-page";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ApiTester from "@/pages/api-tester";
-import { useState, useEffect } from "react";
+import ApiDocs from "@/pages/api-docs";
+import React, { useState, useEffect } from "react";
 import { Script } from "@shared/schema";
 import ScriptDetailModal from "./components/ScriptDetailModal";
 import Notification from "./components/Notification";
@@ -120,6 +121,7 @@ function Router() {
         <Route path="/auth" component={AuthPage} />
         <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route path="/api-test" component={ApiTester} />
+        <Route path="/api-docs" component={ApiDocs} />
         <Route component={NotFound} />
       </Switch>
       
