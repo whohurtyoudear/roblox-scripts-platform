@@ -2473,8 +2473,8 @@ export class DatabaseStorage implements IStorage {
 }
 
 // Initialize storage with the appropriate implementation based on environment
-// For now, we'll always use MemStorage
-const useDatabase = false; // Change to true to use database storage
+// We're now using the database storage for persistence
+const useDatabase = true; // Set to true to use database storage
 
 export const storage = useDatabase 
   ? new DatabaseStorage() 
