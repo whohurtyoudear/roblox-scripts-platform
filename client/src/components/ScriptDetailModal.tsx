@@ -23,6 +23,25 @@ const ScriptDetailModal = ({ script, onClose, showNotification }: ScriptDetailMo
       onClose();
     }
   };
+  
+  // Extract game name from the URL if gameLink is provided
+  const getGameName = (url: string) => {
+    try {
+      // Extract the last part of the URL (after the last slash)
+      const urlParts = url.split('/');
+      let gameName = urlParts[urlParts.length - 1];
+      
+      // If it contains additional parameters (after a question mark), remove them
+      if (gameName.includes('?')) {
+        gameName = gameName.split('?')[0];
+      }
+      
+      // Replace hyphens with spaces and decode URI
+      return decodeURIComponent(gameName.replace(/-/g, ' '));
+    } catch (e) {
+      return 'Roblox Game';
+    }
+  };
 
   return (
     <div 
@@ -54,7 +73,7 @@ const ScriptDetailModal = ({ script, onClose, showNotification }: ScriptDetailMo
             <p className="mb-4">{script.description}</p>
             
             <h3 className="font-semibold text-lg mb-2 text-primary">Game Information:</h3>
-            <p className="mb-2">Type: {script.gameType}</p>
+            {script.gameType && <p className="mb-2">Type: {script.gameType}</p>}
             {script.gameLink && (
               <div className="mb-4">
                 <a 
@@ -63,7 +82,7 @@ const ScriptDetailModal = ({ script, onClose, showNotification }: ScriptDetailMo
                   rel="noopener noreferrer" 
                   className="inline-flex items-center gap-2 bg-[#253344] text-primary py-2 px-4 rounded-lg hover:bg-[#2A3B4D] transition-colors text-sm"
                 >
-                  <ExternalLink className="h-4 w-4" /> Play on Roblox
+                  <ExternalLink className="h-4 w-4" /> Play {getGameName(script.gameLink)}
                 </a>
               </div>
             )}
@@ -86,7 +105,7 @@ const ScriptDetailModal = ({ script, onClose, showNotification }: ScriptDetailMo
           
           <div className="flex justify-between items-center">
             <a 
-              href={script.discordLink || "https://discord.gg/devscripts"} 
+              href={script.discordLink || "https://discord.gg/zM3V4J98m6"} 
               target="_blank" 
               rel="noopener noreferrer" 
               className="inline-flex items-center gap-2 bg-[#5865F2] text-white py-2 px-5 rounded-lg hover:bg-[#4752c4] transition-colors"
