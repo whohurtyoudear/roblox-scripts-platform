@@ -1,166 +1,200 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/use-auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
-import BackButton from "@/components/BackButton";
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
-  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
-  const [registerForm, setRegisterForm] = useState({ username: "", password: "", email: "" });
-  const [_, setLocation] = useLocation();
-  
-  const { user, isLoading, loginMutation, registerMutation } = useAuth();
-  
+  const { user, loginMutation, registerMutation } = useAuth();
+  const [, navigate] = useLocation();
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      setLocation("/");
+      navigate("/");
     }
-  }, [user, setLocation]);
-  
-  const handleLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate({
-      username: loginForm.username,
-      password: loginForm.password
-    });
+  }, [user, navigate]);
+
+  // Login form schema
+  const loginFormSchema = z.object({
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  });
+
+  // Registration form schema
+  const registerFormSchema = z.object({
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    password: z
+      .string()
+      .min(6, "Password must be at least 6 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    email: z.string().email("Please enter a valid email address"),
+    confirmPassword: z.string(),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+  type LoginFormValues = z.infer<typeof loginFormSchema>;
+  type RegisterFormValues = z.infer<typeof registerFormSchema>;
+
+  // Create form handlers
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
+
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerFormSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  // Form submission handlers
+  const onLoginSubmit = (values: LoginFormValues) => {
+    loginMutation.mutate(values);
   };
-  
-  const handleRegisterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    registerMutation.mutate({
-      username: registerForm.username,
-      password: registerForm.password,
-      email: registerForm.email || undefined
-    });
+
+  const onRegisterSubmit = (values: RegisterFormValues) => {
+    const { confirmPassword, ...registerData } = values;
+    registerMutation.mutate(registerData);
   };
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Back Button */}
-      <div className="absolute top-6 left-6">
-        <BackButton defaultPath="/" />
-      </div>
-      
-      {/* Auth Form Side */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-10">
+    <div className="flex min-h-screen flex-col md:flex-row bg-background">
+      {/* Left side - Form */}
+      <div className="flex flex-1 items-center justify-center p-6 md:p-10">
         <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-primary">DEVSCRIPTS</CardTitle>
-            <CardDescription>
-              Sign in to your account or create a new one to access premium scripts
-            </CardDescription>
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Roblox Scripts Platform</CardTitle>
+            <CardDescription className="text-center">Login or create an account to access the platform</CardDescription>
           </CardHeader>
-          
           <CardContent>
-            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="register">Register</TabsTrigger>
               </TabsList>
               
-              {/* Login Form */}
               <TabsContent value="login">
-                <form onSubmit={handleLoginSubmit}>
-                  <div className="grid gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input 
-                        id="username" 
-                        placeholder="Your username" 
-                        value={loginForm.username}
-                        onChange={(e) => setLoginForm({...loginForm, username: e.target.value})}
-                        required
-                      />
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input 
-                        id="password" 
-                        type="password" 
-                        placeholder="••••••••" 
-                        value={loginForm.password}
-                        onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
-                        required
-                      />
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full mt-2"
-                      disabled={loginMutation.isPending}
-                    >
+                <Form {...loginForm}>
+                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4 mt-6">
+                    <FormField
+                      control={loginForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your username" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={loginForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Your password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
                       {loginMutation.isPending ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Signing in...
+                          Logging in...
                         </>
                       ) : (
-                        "Sign In"
+                        "Log in"
                       )}
                     </Button>
-                  </div>
-                </form>
+                  </form>
+                </Form>
               </TabsContent>
               
-              {/* Register Form */}
               <TabsContent value="register">
-                <form onSubmit={handleRegisterSubmit}>
-                  <div className="grid gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="reg-username">Username</Label>
-                      <Input 
-                        id="reg-username" 
-                        placeholder="Choose a username" 
-                        value={registerForm.username}
-                        onChange={(e) => setRegisterForm({...registerForm, username: e.target.value})}
-                        required
-                      />
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label htmlFor="reg-email">Email (optional)</Label>
-                      <Input 
-                        id="reg-email" 
-                        type="email" 
-                        placeholder="your.email@example.com" 
-                        value={registerForm.email}
-                        onChange={(e) => setRegisterForm({...registerForm, email: e.target.value})}
-                      />
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label htmlFor="reg-password">Password</Label>
-                      <Input 
-                        id="reg-password" 
-                        type="password" 
-                        placeholder="Choose a strong password" 
-                        value={registerForm.password}
-                        onChange={(e) => setRegisterForm({...registerForm, password: e.target.value})}
-                        required
-                      />
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full mt-2"
-                      disabled={registerMutation.isPending}
-                    >
+                <Form {...registerForm}>
+                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4 mt-6">
+                    <FormField
+                      control={registerForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Choose a username" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="Your email address" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Create a password" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Must be at least 6 characters with one uppercase letter and one number
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Confirm your password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
                       {registerMutation.isPending ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -170,42 +204,52 @@ export default function AuthPage() {
                         "Create Account"
                       )}
                     </Button>
-                  </div>
-                </form>
+                  </form>
+                </Form>
               </TabsContent>
             </Tabs>
           </CardContent>
-          
-          <CardFooter className="flex justify-center text-sm text-muted-foreground">
-            <p>By signing in, you agree to our Terms of Service</p>
+          <CardFooter className="flex flex-col space-y-4">
+            <div className="text-sm text-muted-foreground text-center w-full">
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </div>
           </CardFooter>
         </Card>
       </div>
       
-      {/* Hero Side */}
-      <div className="flex-1 bg-gradient-to-b from-[#1e1b4b] to-[#312e81] p-10 flex items-center justify-center hidden md:flex">
-        <div className="max-w-md text-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#a5b4fc] to-[#818cf8] text-transparent bg-clip-text mb-4">
-            Unleash the Power of Roblox
-          </h1>
-          <p className="text-[#94a3b8] mb-6">
-            Join our community to access premium scripts and elevate your Roblox experience. 
-            Share your own creations and connect with fellow developers.
+      {/* Right side - Hero section */}
+      <div className="flex-1 bg-primary p-10 flex flex-col justify-center items-center text-primary-foreground hidden md:flex">
+        <div className="max-w-md">
+          <h1 className="text-4xl font-bold mb-6">Discover the Best Roblox Scripts</h1>
+          <p className="text-xl mb-6">
+            Browse, search, and share high-quality scripts for your Roblox games. Join our community of script creators and enthusiasts.
           </p>
-          <div className="grid grid-cols-3 gap-4 mt-8">
-            <div className="p-4 bg-opacity-10 bg-white rounded-lg">
-              <h3 className="text-primary font-semibold mb-1">Premium Scripts</h3>
-              <p className="text-xs text-[#94a3b8]">Access to high-quality, regularly updated scripts</p>
-            </div>
-            <div className="p-4 bg-opacity-10 bg-white rounded-lg">
-              <h3 className="text-primary font-semibold mb-1">Upload Scripts</h3>
-              <p className="text-xs text-[#94a3b8]">Share your creations with the community</p>
-            </div>
-            <div className="p-4 bg-opacity-10 bg-white rounded-lg">
-              <h3 className="text-primary font-semibold mb-1">Community</h3>
-              <p className="text-xs text-[#94a3b8]">Connect with fellow Roblox developers</p>
-            </div>
-          </div>
+          <ul className="space-y-2">
+            <li className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Access to premium scripts
+            </li>
+            <li className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Direct links to Roblox games
+            </li>
+            <li className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Save and organize your favorite scripts
+            </li>
+            <li className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Connect with other script developers
+            </li>
+          </ul>
         </div>
       </div>
     </div>
