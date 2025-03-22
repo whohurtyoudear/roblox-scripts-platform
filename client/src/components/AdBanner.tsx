@@ -61,7 +61,7 @@ export default function AdBanner({ bannerId = 1, imageUrl, linkUrl, altText }: A
         <img 
           src={bannerData.imageUrl} 
           alt={bannerData.altText} 
-          className="w-full h-full object-cover"
+          className="w-full h-[90px] object-contain"
           onError={(e) => {
             (e.target as HTMLImageElement).src = 'https://placehold.co/720x90/374151/FFFFFF?text=Ad+Banner';
           }}

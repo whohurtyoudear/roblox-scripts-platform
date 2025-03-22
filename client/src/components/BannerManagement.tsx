@@ -92,7 +92,7 @@ export default function BannerManagement() {
           <img 
             src={banner.imageUrl} 
             alt={banner.altText} 
-            className="w-full h-full object-cover"
+            className="w-full h-[90px] object-contain"
             onError={(e) => {
               (e.target as HTMLImageElement).src = 'https://placehold.co/720x90/374151/FFFFFF?text=Preview+Unavailable';
             }}

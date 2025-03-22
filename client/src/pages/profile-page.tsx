@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 import AdminUserManagement from "@/components/AdminUserManagement";
 import BannerManagement from "@/components/BannerManagement";
+import BackButton from "@/components/BackButton";
 
 export default function ProfilePage() {
   const { user, isLoading, updateProfileMutation } = useAuth();
@@ -73,6 +74,9 @@ export default function ProfilePage() {
   
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
+      <div className="mb-4">
+        <BackButton />
+      </div>
       <Card className="mb-8">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
           <div>

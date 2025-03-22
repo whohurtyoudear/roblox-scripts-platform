@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Upload, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import BackButton from "@/components/BackButton";
 
 // Game types for fallback or categorization
 const gameTypes = [
@@ -158,6 +159,9 @@ export default function UploadScriptPage() {
   
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
+      <div className="mb-4">
+        <BackButton />
+      </div>
       <Card>
         <form onSubmit={handleSubmit}>
           <CardHeader>
