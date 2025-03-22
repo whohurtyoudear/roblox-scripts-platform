@@ -782,6 +782,97 @@ export default function EnhancedUserManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Edit User Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User Details</DialogTitle>
+            <DialogDescription>
+              Update user account information
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <div className="flex items-center gap-3 mb-4">
+              <Avatar>
+                <AvatarImage src={selectedUser?.avatarUrl || undefined} alt={selectedUser?.username} />
+                <AvatarFallback>{selectedUser?.username?.slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-medium">{selectedUser?.username}</div>
+                <div className="text-xs text-muted-foreground">{formatDate(selectedUser?.createdAt || new Date())}</div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-username">Username</Label>
+                <Input 
+                  id="edit-username" 
+                  value={editUserData.username}
+                  onChange={(e) => setEditUserData({ ...editUserData, username: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input 
+                  id="edit-email" 
+                  type="email"
+                  value={editUserData.email}
+                  onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-bio">Bio</Label>
+                <Textarea 
+                  id="edit-bio" 
+                  placeholder="User biography"
+                  value={editUserData.bio}
+                  onChange={(e) => setEditUserData({ ...editUserData, bio: e.target.value })}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-avatar">Avatar URL</Label>
+                <Input 
+                  id="edit-avatar" 
+                  placeholder="https://example.com/avatar.jpg"
+                  value={editUserData.avatarUrl}
+                  onChange={(e) => setEditUserData({ ...editUserData, avatarUrl: e.target.value })}
+                />
+                {editUserData.avatarUrl && (
+                  <div className="mt-2 flex justify-center">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={editUserData.avatarUrl} alt="Avatar preview" />
+                      <AvatarFallback>{editUserData.username.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+            <Button 
+              onClick={() => {
+                if (!selectedUser) return;
+                editUserMutation.mutate({
+                  userId: selectedUser.id,
+                  userData: editUserData
+                });
+              }}
+              disabled={editUserMutation.isPending}
+            >
+              {editUserMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
