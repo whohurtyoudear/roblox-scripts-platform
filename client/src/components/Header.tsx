@@ -30,7 +30,8 @@ const Header = () => {
     setLocation('/auth');
   };
 
-  const getInitials = (username: string) => {
+  const getInitials = (username?: string) => {
+    if (!username) return 'U';
     return username.slice(0, 2).toUpperCase();
   };
 
