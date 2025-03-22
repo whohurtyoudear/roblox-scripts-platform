@@ -15,9 +15,9 @@ try {
     throw new Error('DATABASE_URL environment variable is required');
   }
   
-  // Set connection options with required SSL for security
+  // Set connection options
   const options = {
-    ssl: true, // Always enable SSL for security
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     max: 10, // Maximum number of connections
     idle_timeout: 30, // Idle connection timeout in seconds
   };
@@ -30,20 +30,26 @@ try {
   console.log('Successfully connected to PostgreSQL database');
 } catch (error) {
   console.error('Failed to connect to PostgreSQL database:', error);
-  // Provide a fallback DB to prevent application crash
-  // This allows the app to start even if DB connection fails
+  // In production, we don't want to use a fallback connection
+  // as it would lead to unexpected behavior
+  if (process.env.NODE_ENV === 'production') {
+    console.error('No fallback database available in production. Please check your DATABASE_URL environment variable.');
+    throw new Error('Database connection failed in production environment');
+  }
+  
+  // For development, provide a fallback connection
   try {
-    const fallbackOptions = {
-      ssl: false, // Fallback without SSL if necessary
-    };
-    const queryClient = postgres('postgres://localhost:5432/postgres', fallbackOptions);
+    console.log('Attempting to connect to fallback database...');
+    // Use environment variables if available, otherwise use defaults
+    const fallbackUrl = process.env.FALLBACK_DATABASE_URL || 'postgres://localhost:5432/postgres';
+    const fallbackOptions = { ssl: false };
+    
+    const queryClient = postgres(fallbackUrl, fallbackOptions);
     db = drizzle(queryClient, { schema });
     console.log('Using fallback database connection');
   } catch (fallbackError) {
     console.error('Failed to connect to fallback database:', fallbackError);
-    // Create an empty drizzle instance as a last resort
-    const emptyClient = postgres('postgres://localhost:5432/postgres', { ssl: false });
-    db = drizzle(emptyClient, { schema });
+    throw new Error('All database connection attempts failed');
   }
 }
 
