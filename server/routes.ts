@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertScriptSchema, Achievement } from "@shared/schema";
+import { insertScriptSchema } from "@shared/schema";
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: any, next: any) => {
@@ -857,7 +857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/ad-banners', isAdmin, async (req, res) => {
     try {
-      const { name, imageUrl, linkUrl, position, campaignId, altText, isActive } = req.body;
+      const { name, imageUrl, linkUrl, position, campaignId, isActive } = req.body;
       
       if (!name || !imageUrl || !linkUrl || !campaignId) {
         return res.status(400).json({ message: 'Name, image URL, link URL, and campaign ID are required' });
@@ -869,7 +869,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         linkUrl,
         position: position || 'top',
         campaignId,
-        altText,
         isActive: isActive !== undefined ? isActive : true,
       });
       
@@ -887,7 +886,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid banner ID' });
       }
       
-      const { name, imageUrl, linkUrl, position, campaignId, altText, isActive } = req.body;
+      const { name, imageUrl, linkUrl, position, campaignId, isActive } = req.body;
       
       const bannerData: any = {};
       if (name !== undefined) bannerData.name = name;
@@ -895,7 +894,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (linkUrl !== undefined) bannerData.linkUrl = linkUrl;
       if (position !== undefined) bannerData.position = position;
       if (campaignId !== undefined) bannerData.campaignId = campaignId;
-      if (altText !== undefined) bannerData.altText = altText;
       if (isActive !== undefined) bannerData.isActive = isActive;
       
       const updatedBanner = await storage.updateAdBanner(id, bannerData);
@@ -1298,7 +1296,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { name, description, imageUrl, criteria, points, isEnabled } = req.body;
-      const achievementData: Partial<Achievement> = {};
+      // Using a simple object instead of Partial<Achievement>
+      const achievementData: any = {};
       
       if (name !== undefined) achievementData.name = name;
       if (description !== undefined) achievementData.description = description;
