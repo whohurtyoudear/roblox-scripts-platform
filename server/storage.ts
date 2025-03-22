@@ -37,6 +37,8 @@ export interface IStorage {
   getUserById(id: number): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<Omit<User, "id" | "password">>): Promise<User | undefined>;
+  updateUserPassword(id: number, newPassword: string): Promise<User | undefined>;
+  verifyUser(username: string, password: string): Promise<User | null>;
   
   // Session store
   sessionStore: any; // Using 'any' to avoid type issues with session store
@@ -164,6 +166,17 @@ export class MemStorage implements IStorage {
     if (!user) return undefined;
 
     const updatedUser: User = { ...user, ...userData };
+    this.users.set(id, updatedUser);
+    
+    return { ...updatedUser, password: "[HIDDEN]" } as User; // Don't return actual password
+  }
+  
+  async updateUserPassword(id: number, newPassword: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const hashedPassword = await hashPassword(newPassword);
+    const updatedUser: User = { ...user, password: hashedPassword };
     this.users.set(id, updatedUser);
     
     return { ...updatedUser, password: "[HIDDEN]" } as User; // Don't return actual password
