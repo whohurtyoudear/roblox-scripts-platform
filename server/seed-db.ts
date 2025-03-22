@@ -2,6 +2,7 @@ import { db } from './db';
 import { users, categories, tags } from '@shared/schema';
 import { scrypt, randomBytes } from 'crypto';
 import { promisify } from 'util';
+import { eq } from 'drizzle-orm/expressions';
 
 const scryptAsync = promisify(scrypt);
 
@@ -16,7 +17,7 @@ async function seedDatabase() {
     console.log('Seeding database...');
     
     // Create admin user if it doesn't exist
-    const existingAdmin = await db.select().from(users).where(users => users.username.equals('admin')).limit(1);
+    const existingAdmin = await db.select().from(users).where(eq(users.username, 'admin')).limit(1);
     
     if (existingAdmin.length === 0) {
       console.log('Creating admin user...');

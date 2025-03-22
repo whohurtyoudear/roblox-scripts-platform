@@ -2472,10 +2472,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Initialize storage with the appropriate implementation based on environment
-// We're now using the database storage for persistence
-const useDatabase = true; // Set to true to use database storage
-
-export const storage = useDatabase 
-  ? new DatabaseStorage() 
-  : new MemStorage();
+// We're using PostgreSQL database storage for persistence
+export const storage = new DatabaseStorage();
