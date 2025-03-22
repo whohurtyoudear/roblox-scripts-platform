@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, boolean, json, primaryKey, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean, json, primaryKey, uniqueIndex, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -108,7 +108,8 @@ export const favorites = pgTable("favorites", {
   scriptId: integer("script_id").notNull().references(() => scripts.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (t) => ({
-  uniqueUserScript: primaryKey(t.userId, t.scriptId),
+  // Use a uniqueIndex instead of a second primary key
+  uniqueUserScript: uniqueIndex("favorites_user_script_idx").on(t.userId, t.scriptId),
 }));
 
 export const insertFavoriteSchema = createInsertSchema(favorites).omit({
@@ -148,7 +149,7 @@ export const ratings = pgTable("ratings", {
   value: integer("value").notNull(), // 1-5 stars
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (t) => ({
-  uniqueUserScript: primaryKey(t.userId, t.scriptId),
+  uniqueUserScript: uniqueIndex("ratings_user_script_idx").on(t.userId, t.scriptId),
 }));
 
 export const insertRatingSchema = createInsertSchema(ratings).omit({
