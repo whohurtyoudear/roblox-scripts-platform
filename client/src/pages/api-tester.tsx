@@ -10,15 +10,40 @@ export default function ApiTester() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // This is a direct fetch to test the endpoint
   const testEndpoint = async (endpoint: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/${endpoint}`);
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      // Use direct fetch API instead of relying on queryClient
+      // Also include a random query parameter to bypass any caching
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/${endpoint}?_t=${timestamp}`, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest' // Some servers use this to detect AJAX requests
+        }
+      });
+      
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // If not JSON, get the text and try to parse it
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          console.log('Response is not JSON:', text.substring(0, 500) + '...');
+          throw new Error('API did not return JSON. Check console for details.');
+        }
       }
-      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText} - ${JSON.stringify(data)}`);
+      }
+      
       setTestResult(data);
     } catch (err) {
       console.error('API test error:', err);

@@ -119,6 +119,7 @@ function Router() {
         />
         <Route path="/auth" component={AuthPage} />
         <Route path="/privacy-policy" component={PrivacyPolicy} />
+        <Route path="/api-test" component={ApiTester} />
         <Route component={NotFound} />
       </Switch>
       
