@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("PUT", "/api/profile", profileData);
       return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: {user: User}) => {
       queryClient.setQueryData(["/api/user"], data.user);
       toast({
         title: "Profile updated",
