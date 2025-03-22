@@ -54,6 +54,7 @@ export interface IStorage {
   unbanUser(id: number): Promise<User | undefined>;
   updateUserLastLogin(id: number): Promise<void>;
   updateUserReputation(id: number, amount: number): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Category operations
   getAllCategories(): Promise<Category[]>;
@@ -640,6 +641,16 @@ export class MemStorage implements IStorage {
     this.users.set(id, updatedUser);
     
     return { ...updatedUser, password: "[HIDDEN]" } as User;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    // Check if user exists
+    if (!this.users.has(id)) {
+      return false;
+    }
+    
+    // Delete the user
+    return this.users.delete(id);
   }
   
   // Category operations
