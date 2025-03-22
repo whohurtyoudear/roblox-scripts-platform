@@ -126,7 +126,7 @@ export interface IStorage {
   getActiveAdBanners(position?: string): Promise<AdBanner[]>;
   
   // Session store
-  sessionStore: any; // Using 'any' to avoid type issues with session store
+  sessionStore: any; // Store for session data (using any to avoid type conflicts)
 }
 
 export class MemStorage implements IStorage {
@@ -158,7 +158,7 @@ export class MemStorage implements IStorage {
   adCampaignId: number;
   adBannerId: number;
   
-  sessionStore: any; // Using 'any' to avoid type issues with session store
+  sessionStore: any; // Memory-based session storage (using any to avoid type conflicts)
 
   constructor() {
     // Initialize maps
@@ -190,6 +190,7 @@ export class MemStorage implements IStorage {
     this.adCampaignId = 1;
     this.adBannerId = 1;
     
+    // Initialize session store
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
