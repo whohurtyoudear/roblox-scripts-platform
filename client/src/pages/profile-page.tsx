@@ -25,6 +25,7 @@ import BannerManagement from "@/components/BannerManagement";
 import BackButton from "@/components/BackButton";
 import ScriptDetailModal from "@/components/ScriptDetailModal";
 import Notification from "@/components/Notification";
+import UserAchievements from "@/components/UserAchievements";
 
 export default function ProfilePage() {
   const { toast } = useToast();
