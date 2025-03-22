@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getQueryFn } from '@/lib/queryClient';
 import {
@@ -45,9 +45,43 @@ const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308'
 
 export default function AnalyticsDashboard() {
   const [dateRange, setDateRange] = useState('week');
+  const [chartContainerKey, setChartContainerKey] = useState(0);
+  const containerRef = useRef(null);
   
+  // Effect to handle chart container resize
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      // Force recharts to recalculate dimensions by updating the key
+      setChartContainerKey(prev => prev + 1);
+    });
+    
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+  
+  // Define analytics data type
+  interface AnalyticsData {
+    overview: {
+      totalUsers: number;
+      totalScripts: number;
+      totalViews: number;
+      totalCopies: number;
+      newUsers: { count: number; trend: number };
+      activeScripts: { count: number; trend: number };
+    };
+    userActivity: Array<{ hour: number; users: number }>;
+    scriptPopularity: Array<{ name: string; views: number; copies: number }>;
+    categoryDistribution: Array<{ name: string; value: number }>;
+    dailyVisits: Array<{ date: string; views: number; copies: number }>;
+  }
+
   // Fetch analytics data
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<AnalyticsData>({
     queryKey: ['/api/admin/analytics', dateRange],
     queryFn: getQueryFn({ on401: 'throw' }),
   });
@@ -68,7 +102,7 @@ export default function AnalyticsDashboard() {
     );
   }
 
-  const analytics = data || {
+  const analytics: AnalyticsData = data || {
     // Default structure if no data is returned
     overview: { 
       totalUsers: 0, totalScripts: 0, totalViews: 0, totalCopies: 0,
@@ -82,7 +116,7 @@ export default function AnalyticsDashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={containerRef}>
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
         
@@ -153,7 +187,7 @@ export default function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" key={`daily-visits-${chartContainerKey}`}>
                 <LineChart data={analytics.dailyVisits} margin={{ top: 5, right: 30, left: 20, bottom: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2e3a4f" />
                   <XAxis dataKey="date" />
@@ -175,7 +209,7 @@ export default function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" key={`user-activity-${chartContainerKey}`}>
                 <BarChart data={analytics.userActivity} margin={{ top: 5, right: 30, left: 20, bottom: 25 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2e3a4f" />
                   <XAxis dataKey="hour" />
@@ -196,7 +230,7 @@ export default function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" key={`script-popularity-${chartContainerKey}`}>
                 <BarChart 
                   layout="vertical" 
                   data={analytics.scriptPopularity} 
@@ -223,7 +257,7 @@ export default function AnalyticsDashboard() {
         </CardHeader>
         <CardContent className="flex justify-center">
           <div className="h-[300px] w-full max-w-lg">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" key={`category-distribution-${chartContainerKey}`}>
               <PieChart>
                 <Pie
                   data={analytics.categoryDistribution}
@@ -236,7 +270,7 @@ export default function AnalyticsDashboard() {
                   nameKey="name"
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
-                  {analytics.categoryDistribution.map((entry, index) => (
+                  {analytics.categoryDistribution.map((entry: {name: string; value: number}, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
