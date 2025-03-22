@@ -5,9 +5,10 @@ import { Redirect, Route } from "wouter";
 type ProtectedRouteProps = {
   path: string;
   component: React.ComponentType;
+  requiredRole?: string;
 };
 
-export function ProtectedRoute({ path, component: Component }: ProtectedRouteProps) {
+export function ProtectedRoute({ path, component: Component, requiredRole }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
 
   return (
@@ -18,6 +19,8 @@ export function ProtectedRoute({ path, component: Component }: ProtectedRoutePro
         </div>
       ) : !user ? (
         <Redirect to="/auth" />
+      ) : (requiredRole && user.role !== requiredRole) ? (
+        <Redirect to="/" />
       ) : (
         <Component />
       )}

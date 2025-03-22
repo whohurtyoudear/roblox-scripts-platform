@@ -117,6 +117,7 @@ function Router() {
         <ProtectedRoute 
           path="/admin" 
           component={AdminDashboard} 
+          requiredRole="admin"
         />
         <Route path="/auth" component={AuthPage} />
         <Route path="/privacy-policy" component={PrivacyPolicy} />
