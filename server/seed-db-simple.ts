@@ -28,7 +28,7 @@ async function seedDatabase() {
         role: 'admin'
       });
       console.log('Admin user created successfully.');
-    } catch (error) {
+    } catch (error: any) {
       // If error is due to duplicate username, it's okay
       console.log('Admin user might already exist:', error.message);
     }
@@ -48,7 +48,7 @@ async function seedDatabase() {
     for (const category of defaultCategories) {
       try {
         await db.insert(categories).values(category);
-      } catch (error) {
+      } catch (error: any) {
         // If error is due to duplicate, it's okay
         console.log(`Category ${category.name} might already exist:`, error.message);
       }
@@ -71,7 +71,7 @@ async function seedDatabase() {
     for (const tag of defaultTags) {
       try {
         await db.insert(tags).values(tag);
-      } catch (error) {
+      } catch (error: any) {
         // If error is due to duplicate, it's okay
         console.log(`Tag ${tag.name} might already exist:`, error.message);
       }
@@ -79,7 +79,7 @@ async function seedDatabase() {
     
     console.log('Default tags created successfully.');
     console.log('Database seeding completed.');
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error seeding database:', error);
   }
 }

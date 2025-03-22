@@ -780,14 +780,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Campaign name is required' });
       }
       
-      const newCampaign = await storage.createAdCampaign({
+      // Create a new campaign with properly typed dates
+      const campaignData: any = {
         name,
         description,
-        startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : undefined,
         isActive: isActive !== undefined ? isActive : true,
         userId: req.user!.id
-      });
+      };
+      
+      // Only add dates if they are provided
+      if (startDate) campaignData.startDate = new Date(startDate);
+      if (endDate) campaignData.endDate = new Date(endDate);
+      
+      const newCampaign = await storage.createAdCampaign(campaignData);
       
       return res.json(newCampaign);
     } catch (error) {
