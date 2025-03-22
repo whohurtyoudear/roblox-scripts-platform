@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User, Upload, Menu, X } from 'lucide-react';
+import { LogOut, User, Upload, Menu, X, LayoutDashboard } from 'lucide-react';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -80,6 +80,14 @@ const Header = () => {
                       <span>Upload Script</span>
                     </Link>
                   </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
@@ -137,6 +145,12 @@ const Header = () => {
                     <Upload className="h-4 w-4" />
                     <span>Upload Script</span>
                   </Link>
+                  {user.role === 'admin' && (
+                    <Link href="/admin" className="flex items-center gap-2 font-medium hover:text-primary transition-colors">
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  )}
                   <button 
                     onClick={handleLogout} 
                     className="flex items-center gap-2 font-medium text-red-500 hover:text-red-400 transition-colors mt-2"
