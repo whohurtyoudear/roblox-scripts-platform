@@ -1,10 +1,13 @@
 import { 
   scripts, users, categories, tags, scriptTags, favorites, comments, ratings, activityLogs, 
-  affiliateLinks, affiliateClicks, adCampaigns, adBanners,
+  affiliateLinks, affiliateClicks, adCampaigns, adBanners, achievements, userAchievements,
+  scriptVotes, userFollows,
   type Script, type InsertScript, type User, type InsertUser, type Category, type InsertCategory,
   type Tag, type InsertTag, type Favorite, type InsertFavorite, type Comment, type InsertComment,
   type Rating, type InsertRating, type AffiliateLink, type InsertAffiliateLink, type AdCampaign,
-  type InsertAdCampaign, type AdBanner, type InsertAdBanner
+  type InsertAdCampaign, type AdBanner, type InsertAdBanner, type Achievement, type InsertAchievement,
+  type UserAchievement, type InsertUserAchievement, type ScriptVote, type InsertScriptVote,
+  type UserFollow, type InsertUserFollow
 } from "@shared/schema";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -41,6 +44,7 @@ export interface IStorage {
   getFeaturedScripts(limit?: number): Promise<Script[]>;
   incrementScriptViews(id: number): Promise<void>;
   incrementScriptCopies(id: number): Promise<void>;
+  getTrendingScripts(days?: number, limit?: number): Promise<Script[]>;
   
   // User operations
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -89,7 +93,34 @@ export interface IStorage {
   deleteComment(id: number): Promise<boolean>;
   approveComment(id: number): Promise<Comment | undefined>;
   
-  // Ratings operations
+  // Script votes operations (likes/dislikes)
+  addScriptVote(vote: InsertScriptVote): Promise<ScriptVote>;
+  removeScriptVote(userId: number, scriptId: number): Promise<boolean>;
+  getScriptVotes(scriptId: number): Promise<{upvotes: number, downvotes: number}>;
+  getUserScriptVote(userId: number, scriptId: number): Promise<ScriptVote | undefined>;
+  
+  // User follows operations
+  followUser(follow: InsertUserFollow): Promise<UserFollow>;
+  unfollowUser(followerId: number, followedId: number): Promise<boolean>;
+  isFollowing(followerId: number, followedId: number): Promise<boolean>;
+  getUserFollowers(userId: number): Promise<User[]>;
+  getUserFollowing(userId: number): Promise<User[]>;
+  getFollowCount(userId: number): Promise<{followers: number, following: number}>;
+  
+  // Achievement operations
+  getAllAchievements(): Promise<Achievement[]>;
+  getAchievementById(id: number): Promise<Achievement | undefined>;
+  createAchievement(achievement: InsertAchievement): Promise<Achievement>;
+  updateAchievement(id: number, achievementData: Partial<Achievement>): Promise<Achievement | undefined>;
+  deleteAchievement(id: number): Promise<boolean>;
+  getUserAchievements(userId: number): Promise<Achievement[]>;
+  awardAchievement(userAchievement: InsertUserAchievement): Promise<UserAchievement>;
+  hasAchievement(userId: number, achievementId: number): Promise<boolean>;
+  getUnseenAchievements(userId: number): Promise<Achievement[]>;
+  markAchievementAsSeen(userId: number, achievementId: number): Promise<void>;
+  checkAndAwardAchievements(userId: number): Promise<Achievement[]>;
+  
+  // Ratings operations (keeping for backward compatibility)
   getScriptRating(scriptId: number): Promise<number>;
   rateScript(rating: InsertRating): Promise<Rating>;
   getUserRating(userId: number, scriptId: number): Promise<Rating | undefined>;
@@ -144,6 +175,10 @@ export class MemStorage implements IStorage {
   private affiliateClicks: any[]; // Array for simplicity
   private adCampaigns: Map<number, AdCampaign>;
   private adBanners: Map<number, AdBanner>;
+  private achievements: Map<number, Achievement>;
+  private userAchievements: Map<string, UserAchievement>;
+  private scriptVotes: Map<string, ScriptVote>;
+  private userFollows: Map<string, UserFollow>;
   
   // ID counters
   scriptId: number;
@@ -158,6 +193,10 @@ export class MemStorage implements IStorage {
   affiliateClickId: number;
   adCampaignId: number;
   adBannerId: number;
+  achievementId: number;
+  userAchievementId: number;
+  scriptVoteId: number;
+  userFollowId: number;
   
   sessionStore: any; // Memory-based session storage (using any to avoid type conflicts)
 

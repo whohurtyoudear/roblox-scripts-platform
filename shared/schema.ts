@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, boolean, json, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean, json, primaryKey, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -278,3 +278,80 @@ export type Script = typeof scripts.$inferSelect & {
   // Added for backward compatibility with components that expect createdAt
   createdAt?: Date;
 };
+
+// User achievements system
+export const achievements = pgTable("achievements", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description").notNull(),
+  iconUrl: text("icon_url").notNull(),
+  type: text("type").notNull(), // e.g., 'upload', 'favorite', 'comment', 'rating'
+  threshold: integer("threshold").notNull(), // Number required to earn (e.g., 5 uploads)
+  points: integer("points").default(10), // Reputation points awarded
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertAchievementSchema = createInsertSchema(achievements).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+export type Achievement = typeof achievements.$inferSelect;
+
+// User earned achievements relation
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  achievementId: integer("achievement_id").notNull().references(() => achievements.id),
+  earnedAt: timestamp("earned_at").defaultNow().notNull(),
+  notified: boolean("notified").default(false),
+}, (t) => ({
+  uniqueUserAchievement: uniqueIndex("unique_user_achievement").on(t.userId, t.achievementId),
+}));
+
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({
+  id: true,
+  earnedAt: true,
+  notified: true,
+});
+
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+
+// Like/dislike system for scripts (replacing the 5-star rating system)
+export const scriptVotes = pgTable("script_votes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  scriptId: integer("script_id").notNull().references(() => scripts.id),
+  isUpvote: boolean("is_upvote").notNull(), // true = like, false = dislike
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({
+  uniqueUserScript: uniqueIndex("unique_user_script_vote").on(t.userId, t.scriptId),
+}));
+
+export const insertScriptVoteSchema = createInsertSchema(scriptVotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertScriptVote = z.infer<typeof insertScriptVoteSchema>;
+export type ScriptVote = typeof scriptVotes.$inferSelect;
+
+// User following system
+export const userFollows = pgTable("user_follows", {
+  id: serial("id").primaryKey(),
+  followerId: integer("follower_id").notNull().references(() => users.id),
+  followedId: integer("followed_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({
+  uniqueFollowerFollowed: uniqueIndex("unique_follower_followed").on(t.followerId, t.followedId),
+}));
+
+export const insertUserFollowSchema = createInsertSchema(userFollows).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUserFollow = z.infer<typeof insertUserFollowSchema>;
+export type UserFollow = typeof userFollows.$inferSelect;
