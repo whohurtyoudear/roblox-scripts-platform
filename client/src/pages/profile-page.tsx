@@ -23,6 +23,8 @@ import ChangePasswordForm from "@/components/ChangePasswordForm";
 import AdminUserManagement from "@/components/AdminUserManagement";
 import BannerManagement from "@/components/BannerManagement";
 import BackButton from "@/components/BackButton";
+import ScriptDetailModal from "@/components/ScriptDetailModal";
+import Notification from "@/components/Notification";
 
 export default function ProfilePage() {
   const { toast } = useToast();
@@ -30,6 +32,12 @@ export default function ProfilePage() {
   const [_, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<string>("profile");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedScript, setSelectedScript] = useState<Script | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [notification, setNotification] = useState({
+    show: false,
+    message: ""
+  });
   
   const [profileForm, setProfileForm] = useState({
     bio: "",
@@ -37,6 +45,25 @@ export default function ProfilePage() {
     avatarUrl: "",
     discordUsername: ""
   });
+  
+  // Script detail modal functions
+  const openScriptDetail = (script: Script) => {
+    setSelectedScript(script);
+    setIsModalOpen(true);
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeScriptDetail = () => {
+    setIsModalOpen(false);
+    document.body.style.overflow = "auto";
+  };
+
+  const showNotification = (message: string) => {
+    setNotification({ show: true, message });
+    setTimeout(() => {
+      setNotification({ show: false, message: "" });
+    }, 2000);
+  };
   
   // Fetch user scripts
   const { 
@@ -349,8 +376,12 @@ export default function ProfilePage() {
                             </p>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="outline" size="sm" asChild>
-                              <a href={`/scripts/${script.id}`}>View</a>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => openScriptDetail(script)}
+                            >
+                              View
                             </Button>
                             <Button variant="ghost" size="sm">
                               <Copy className="h-4 w-4" />
@@ -427,8 +458,12 @@ export default function ProfilePage() {
                             </p>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="outline" size="sm" asChild>
-                              <a href={`/scripts/${script.id}`}>View</a>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => openScriptDetail(script)}
+                            >
+                              View
                             </Button>
                             <Button variant="ghost" size="sm">
                               <Heart className="h-4 w-4 text-red-500" fill="currentColor" />
@@ -514,6 +549,21 @@ export default function ProfilePage() {
           </TabsContent>
         )}
       </Tabs>
+      
+      {/* Script Detail Modal */}
+      {isModalOpen && selectedScript && (
+        <ScriptDetailModal 
+          script={selectedScript} 
+          onClose={closeScriptDetail} 
+          showNotification={showNotification}
+        />
+      )}
+      
+      {/* Notification */}
+      <Notification
+        show={notification.show}
+        message={notification.message}
+      />
     </div>
   );
 }
