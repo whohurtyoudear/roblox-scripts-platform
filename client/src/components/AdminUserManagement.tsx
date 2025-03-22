@@ -61,10 +61,12 @@ export default function AdminUserManagement() {
   const [selectedRole, setSelectedRole] = useState('');
 
   // Fetch all users
-  const { data: users, isLoading, error } = useQuery<User[]>({
+  const { data, isLoading, error } = useQuery<{ users: User[] }>({
     queryKey: ['/api/admin/users'],
     queryFn: getQueryFn({ on401: 'throw' }),
   });
+  
+  const users = data?.users;
 
   // Create new user
   const createUserMutation = useMutation({
