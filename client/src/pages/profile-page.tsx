@@ -404,7 +404,7 @@ export default function ProfilePage() {
                           </div>
                           <div className="flex items-center text-sm">
                             <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                            {formatDate(script.createdAt)}
+                            {formatDate(script.lastUpdated)}
                           </div>
                         </div>
                       </div>
@@ -482,7 +482,7 @@ export default function ProfilePage() {
                           </div>
                           <div className="flex items-center text-sm">
                             <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                            {formatDate(script.createdAt)}
+                            {formatDate(script.lastUpdated)}
                           </div>
                           {script.gameLink && (
                             <div className="flex items-center text-sm">
