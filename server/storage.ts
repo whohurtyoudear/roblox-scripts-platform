@@ -1766,6 +1766,22 @@ export class DatabaseStorage implements IStorage {
   
   async deleteScript(id: number): Promise<boolean> {
     try {
+      // First, remove any references to this script from favorites table
+      await db.delete(favorites).where(eq(favorites.scriptId, id));
+      
+      // Remove any script tags associations
+      await db.delete(scriptTags).where(eq(scriptTags.scriptId, id));
+      
+      // Remove any comments on this script
+      await db.delete(comments).where(eq(comments.scriptId, id));
+      
+      // Remove any ratings for this script
+      await db.delete(ratings).where(eq(ratings.scriptId, id));
+      
+      // Remove any script votes
+      await db.delete(scriptVotes).where(eq(scriptVotes.scriptId, id));
+      
+      // Now it's safe to delete the script
       const result = await db.delete(scripts).where(eq(scripts.id, id)).returning();
       return result.length > 0;
     } catch (error) {
