@@ -7,13 +7,14 @@ import Home from "@/pages/Home";
 import AuthPage from "@/pages/auth-page";
 import ProfilePage from "@/pages/profile-page";
 import UploadScriptPage from "@/pages/upload-script-page";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Script } from "@shared/schema";
 import ScriptDetailModal from "./components/ScriptDetailModal";
 import Notification from "./components/Notification";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import AdBanner, { adBannerData } from "./components/AdBanner";
+import { useLocation } from "wouter";
 
 function Router() {
   const [selectedScript, setSelectedScript] = useState<Script | null>(null);
@@ -22,6 +23,17 @@ function Router() {
     show: false,
     message: ""
   });
+  const [location] = useLocation();
+  
+  // Track page navigation to handle social bar ads with 5-minute delay
+  useEffect(() => {
+    // On each navigation, check if we need to show an ad
+    // This is already handled by our script in index.html, but we call it here
+    // to ensure it's checked on each navigation event
+    if (typeof window !== 'undefined' && window.loadSocialBarScript) {
+      window.loadSocialBarScript();
+    }
+  }, [location]);
 
   const openScriptDetail = (script: Script) => {
     setSelectedScript(script);
