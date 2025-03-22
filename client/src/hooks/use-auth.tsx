@@ -19,10 +19,10 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<User, Error, LoginData>;
+  loginMutation: UseMutationResult<{user: User}, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<User, Error, InsertUser>;
-  updateProfileMutation: UseMutationResult<User, Error, ProfileUpdateData>;
+  registerMutation: UseMutationResult<{user: User}, Error, InsertUser>;
+  updateProfileMutation: UseMutationResult<{user: User}, Error, ProfileUpdateData>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -44,11 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/login", credentials);
       return await res.json();
     },
-    onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (data: {user: User}) => {
+      queryClient.setQueryData(["/api/user"], data.user);
       toast({
         title: "Login successful",
-        description: `Welcome back, ${user.username}!`,
+        description: `Welcome back, ${data.user.username}!`,
       });
     },
     onError: (error: Error) => {
@@ -65,11 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/register", credentials);
       return await res.json();
     },
-    onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (data: {user: User}) => {
+      queryClient.setQueryData(["/api/user"], data.user);
       toast({
         title: "Registration successful",
-        description: `Welcome, ${user.username}!`,
+        description: `Welcome, ${data.user.username}!`,
       });
     },
     onError: (error: Error) => {
