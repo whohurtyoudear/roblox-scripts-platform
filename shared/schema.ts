@@ -59,6 +59,8 @@ export const tags = pgTable("tags", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   slug: text("slug").notNull().unique(),
+  description: text("description"),
+  color: text("color"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

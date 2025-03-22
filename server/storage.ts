@@ -826,8 +826,11 @@ export class MemStorage implements IStorage {
   async createTag(tag: InsertTag): Promise<Tag> {
     const id = this.tagId++;
     const newTag: Tag = {
-      ...tag,
       id,
+      name: tag.name,
+      slug: tag.slug,
+      description: tag.description || null,
+      color: tag.color || null,
       createdAt: new Date()
     };
     this.tags.set(id, newTag);
@@ -898,8 +901,9 @@ export class MemStorage implements IStorage {
     const id = this.favoriteId++;
     
     const newFavorite: Favorite = {
-      ...favorite,
       id,
+      userId: favorite.userId,
+      scriptId: favorite.scriptId,
       createdAt: new Date()
     };
     
@@ -933,8 +937,8 @@ export class MemStorage implements IStorage {
       scriptId: comment.scriptId,
       content: comment.content,
       parentId: comment.parentId || null,
-      isApproved: false,
-      isDeleted: false,
+      isApproved: false as unknown as boolean | null,
+      isDeleted: false as unknown as boolean | null,
       createdAt: new Date()
     };
     
@@ -976,8 +980,10 @@ export class MemStorage implements IStorage {
     const id = this.ratingId++;
     
     const newRating: Rating = {
-      ...rating,
       id,
+      userId: rating.userId,
+      scriptId: rating.scriptId,
+      value: rating.value,
       createdAt: new Date()
     };
     
@@ -1056,8 +1062,13 @@ export class MemStorage implements IStorage {
     const id = this.affiliateLinkId++;
     
     const newLink: AffiliateLink = {
-      ...link,
       id,
+      code: link.code,
+      url: link.url,
+      description: link.description || null,
+      userId: link.userId || null,
+      expiresAt: link.expiresAt || null,
+      isActive: link.isActive || null,
       clicks: 0,
       createdAt: new Date()
     };
@@ -1093,7 +1104,7 @@ export class MemStorage implements IStorage {
   async trackAffiliateClick(linkId: number, ipAddress?: string, userAgent?: string, referrer?: string): Promise<void> {
     const link = this.affiliateLinks.get(linkId);
     if (link) {
-      link.clicks++;
+      link.clicks = (link.clicks || 0) + 1;
       this.affiliateLinks.set(linkId, link);
     }
     
