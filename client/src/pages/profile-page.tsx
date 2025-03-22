@@ -203,12 +203,15 @@ export default function ProfilePage() {
       </Card>
       
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`grid w-full ${user.role === 'admin' ? 'grid-cols-5' : 'grid-cols-4'} mb-6`}>
+        <TabsList className={`grid w-full ${user.role === 'admin' ? 'grid-cols-6' : 'grid-cols-5'} mb-6`}>
           <TabsTrigger value="profile">Profile Details</TabsTrigger>
           <TabsTrigger value="password">Password</TabsTrigger>
           <TabsTrigger value="scripts">My Scripts</TabsTrigger>
           <TabsTrigger value="favorites">
             <Heart className="mr-2 h-4 w-4" /> Favorites
+          </TabsTrigger>
+          <TabsTrigger value="achievements">
+            <Star className="mr-2 h-4 w-4" /> Achievements
           </TabsTrigger>
           {user.role === 'admin' && <TabsTrigger value="admin"><Shield className="mr-2 h-4 w-4" /> Admin</TabsTrigger>}
         </TabsList>
@@ -504,6 +507,22 @@ export default function ProfilePage() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Achievements Tab */}
+        <TabsContent value="achievements">
+          <Card>
+            <CardHeader>
+              <CardTitle>My Achievements</CardTitle>
+              <CardDescription>
+                View badges and achievements you've earned
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <UserAchievements />
             </CardContent>
           </Card>
         </TabsContent>
