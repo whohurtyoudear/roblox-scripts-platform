@@ -215,6 +215,10 @@ export class MemStorage implements IStorage {
     this.affiliateClicks = [];
     this.adCampaigns = new Map();
     this.adBanners = new Map();
+    this.achievements = new Map();
+    this.userAchievements = new Map();
+    this.scriptVotes = new Map();
+    this.userFollows = new Map();
     
     // Initialize IDs
     this.scriptId = 1;
@@ -229,6 +233,10 @@ export class MemStorage implements IStorage {
     this.affiliateClickId = 1;
     this.adCampaignId = 1;
     this.adBannerId = 1;
+    this.achievementId = 1;
+    this.userAchievementId = 1;
+    this.scriptVoteId = 1;
+    this.userFollowId = 1;
     
     // Initialize session store
     this.sessionStore = new MemoryStore({
@@ -632,12 +640,45 @@ export class MemStorage implements IStorage {
         createdAt: script.lastUpdated // Map lastUpdated to createdAt for backward compatibility
       }));
   }
+  
+  async getTrendingScripts(days: number = 7, limit: number = 5): Promise<Script[]> {
+    // For trending scripts, we'll look at views, copies, and vote counts from the past X days
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    // Get all scripts
+    const allScripts = Array.from(this.scripts.values());
+    
+    // Sort by popularity metrics (views, copies, and votes combined)
+    return allScripts
+      .sort((a, b) => {
+        // Calculate a trending score based on views and copies
+        // Newer scripts get a slight boost
+        const viewsA = a.views || 0;
+        const copiesA = a.copies || 0;
+        const viewsB = b.views || 0;
+        const copiesB = b.copies || 0;
+        
+        const scoreA = viewsA * 0.5 + copiesA * 2 + this.getScriptVoteScore(a.id) * 3 + (a.lastUpdated > cutoffDate ? 10 : 0);
+        const scoreB = viewsB * 0.5 + copiesB * 2 + this.getScriptVoteScore(b.id) * 3 + (b.lastUpdated > cutoffDate ? 10 : 0);
+        
+        return scoreB - scoreA; // Sort in descending order
+      })
+      .slice(0, limit)
+      .map(script => ({
+        ...script,
+        createdAt: script.lastUpdated // Map lastUpdated to createdAt for backward compatibility
+      }));
+  }
 
   async incrementScriptViews(id: number): Promise<void> {
     const script = this.scripts.get(id);
     if (script) {
       script.views = (script.views || 0) + 1;
       this.scripts.set(id, script);
+      
+      // Log activity for analytics
+      this.logActivity(null, 'view_script', { scriptId: id });
     }
   }
 
@@ -647,6 +688,164 @@ export class MemStorage implements IStorage {
       script.copies = (script.copies || 0) + 1;
       this.scripts.set(id, script);
     }
+  }
+  
+  // Helper method to calculate vote score for trending algorithm
+  private getScriptVoteScore(scriptId: number): number {
+    const votes = Array.from(this.scriptVotes.values())
+      .filter(vote => vote.scriptId === scriptId);
+    
+    if (votes.length === 0) return 0;
+    
+    const upvotes = votes.filter(vote => vote.isUpvote).length;
+    const downvotes = votes.filter(vote => !vote.isUpvote).length;
+    
+    return upvotes - downvotes;
+  }
+  
+  // Script votes operations (likes/dislikes)
+  async addScriptVote(vote: InsertScriptVote): Promise<ScriptVote> {
+    // Check if user already voted on this script
+    const key = `${vote.userId}-${vote.scriptId}`;
+    const existingVote = Array.from(this.scriptVotes.values())
+      .find(v => v.userId === vote.userId && v.scriptId === vote.scriptId);
+    
+    // If vote exists with same type, return it (no change)
+    if (existingVote && existingVote.isUpvote === vote.isUpvote) {
+      return existingVote;
+    }
+    
+    // If vote exists with different type, remove it
+    if (existingVote) {
+      this.scriptVotes.delete(key);
+    }
+    
+    // Create new vote
+    const id = this.scriptVoteId++;
+    const newVote: ScriptVote = {
+      id,
+      userId: vote.userId,
+      scriptId: vote.scriptId,
+      isUpvote: vote.isUpvote,
+      createdAt: new Date()
+    };
+    
+    this.scriptVotes.set(key, newVote);
+    
+    // Update user reputation based on vote
+    const script = this.scripts.get(vote.scriptId);
+    if (script && script.userId) {
+      // Award reputation to script author - upvote adds 1, downvote subtracts 1
+      this.updateUserReputation(script.userId, vote.isUpvote ? 1 : -1);
+    }
+    
+    return newVote;
+  }
+  
+  async removeScriptVote(userId: number, scriptId: number): Promise<boolean> {
+    const key = `${userId}-${scriptId}`;
+    const vote = this.scriptVotes.get(key);
+    
+    if (!vote) return false;
+    
+    // Reverse reputation change on script author
+    const script = this.scripts.get(scriptId);
+    if (script && script.userId) {
+      // Removing upvote removes 1 rep, removing downvote adds 1 rep
+      this.updateUserReputation(script.userId, vote.isUpvote ? -1 : 1);
+    }
+    
+    return this.scriptVotes.delete(key);
+  }
+  
+  async getScriptVotes(scriptId: number): Promise<{upvotes: number, downvotes: number}> {
+    const votes = Array.from(this.scriptVotes.values())
+      .filter(vote => vote.scriptId === scriptId);
+    
+    const upvotes = votes.filter(vote => vote.isUpvote).length;
+    const downvotes = votes.filter(vote => !vote.isUpvote).length;
+    
+    return { upvotes, downvotes };
+  }
+  
+  async getUserScriptVote(userId: number, scriptId: number): Promise<ScriptVote | undefined> {
+    const key = `${userId}-${scriptId}`;
+    return this.scriptVotes.get(key);
+  }
+  
+  // User follows operations
+  async followUser(follow: InsertUserFollow): Promise<UserFollow> {
+    // Check if follow already exists
+    const key = `${follow.followerId}-${follow.followedId}`;
+    const existingFollow = Array.from(this.userFollows.values())
+      .find(f => f.followerId === follow.followerId && f.followedId === follow.followedId);
+    
+    if (existingFollow) {
+      return existingFollow;
+    }
+    
+    // Create new follow
+    const id = this.userFollowId++;
+    const newFollow: UserFollow = {
+      id,
+      followerId: follow.followerId,
+      followedId: follow.followedId,
+      createdAt: new Date()
+    };
+    
+    this.userFollows.set(key, newFollow);
+    
+    // Update reputation for followed user
+    this.updateUserReputation(follow.followedId, 2); // Award 2 reputation points for being followed
+    
+    return newFollow;
+  }
+  
+  async unfollowUser(followerId: number, followedId: number): Promise<boolean> {
+    const key = `${followerId}-${followedId}`;
+    const follow = this.userFollows.get(key);
+    
+    if (!follow) return false;
+    
+    // Update reputation for unfollowed user
+    this.updateUserReputation(followedId, -2); // Remove 2 reputation points when unfollowed
+    
+    return this.userFollows.delete(key);
+  }
+  
+  async isFollowing(followerId: number, followedId: number): Promise<boolean> {
+    const key = `${followerId}-${followedId}`;
+    return this.userFollows.has(key);
+  }
+  
+  async getUserFollowers(userId: number): Promise<User[]> {
+    const followerIds = Array.from(this.userFollows.values())
+      .filter(follow => follow.followedId === userId)
+      .map(follow => follow.followerId);
+    
+    return Array.from(this.users.values())
+      .filter(user => followerIds.includes(user.id))
+      .map(user => ({ ...user, password: "[HIDDEN]" } as User));
+  }
+  
+  async getUserFollowing(userId: number): Promise<User[]> {
+    const followingIds = Array.from(this.userFollows.values())
+      .filter(follow => follow.followerId === userId)
+      .map(follow => follow.followedId);
+    
+    return Array.from(this.users.values())
+      .filter(user => followingIds.includes(user.id))
+      .map(user => ({ ...user, password: "[HIDDEN]" } as User));
+  }
+  
+  async getFollowCount(userId: number): Promise<{followers: number, following: number}> {
+    const followers = Array.from(this.userFollows.values())
+      .filter(follow => follow.followedId === userId).length;
+    
+    const following = Array.from(this.userFollows.values())
+      .filter(follow => follow.followerId === userId).length;
+    
+    return { followers, following };
   }
 
   // User operations
@@ -1090,6 +1289,223 @@ export class MemStorage implements IStorage {
   async getUserRating(userId: number, scriptId: number): Promise<Rating | undefined> {
     const key = `${userId}-${scriptId}`;
     return this.ratings.get(key);
+  }
+  
+  // Achievement operations
+  async getAllAchievements(): Promise<Achievement[]> {
+    return Array.from(this.achievements.values());
+  }
+  
+  async getAchievementById(id: number): Promise<Achievement | undefined> {
+    return this.achievements.get(id);
+  }
+  
+  async createAchievement(achievement: InsertAchievement): Promise<Achievement> {
+    const id = this.achievementId++;
+    const newAchievement: Achievement = {
+      id,
+      name: achievement.name,
+      description: achievement.description || "",
+      imageUrl: achievement.imageUrl || "",
+      points: achievement.points || 0,
+      criteria: achievement.criteria || "",
+      isEnabled: achievement.isEnabled !== undefined ? achievement.isEnabled : true,
+      createdAt: new Date()
+    };
+    this.achievements.set(id, newAchievement);
+    return newAchievement;
+  }
+  
+  async updateAchievement(id: number, achievementData: Partial<Achievement>): Promise<Achievement | undefined> {
+    const achievement = this.achievements.get(id);
+    if (!achievement) return undefined;
+    
+    const updatedAchievement: Achievement = { ...achievement, ...achievementData };
+    this.achievements.set(id, updatedAchievement);
+    return updatedAchievement;
+  }
+  
+  async deleteAchievement(id: number): Promise<boolean> {
+    return this.achievements.delete(id);
+  }
+  
+  async getUserAchievements(userId: number): Promise<Achievement[]> {
+    const achievementIds = Array.from(this.userAchievements.values())
+      .filter(ua => ua.userId === userId)
+      .map(ua => ua.achievementId);
+    
+    return Array.from(this.achievements.values())
+      .filter(achievement => achievementIds.includes(achievement.id));
+  }
+  
+  async awardAchievement(userAchievement: InsertUserAchievement): Promise<UserAchievement> {
+    // Check if the user already has this achievement
+    const existingAchievement = Array.from(this.userAchievements.values())
+      .find(ua => ua.userId === userAchievement.userId && ua.achievementId === userAchievement.achievementId);
+    
+    if (existingAchievement) {
+      return existingAchievement;
+    }
+    
+    // Award the achievement
+    const id = this.userAchievementId++;
+    const newUserAchievement: UserAchievement = {
+      id,
+      userId: userAchievement.userId,
+      achievementId: userAchievement.achievementId,
+      awardedAt: new Date(),
+      seenAt: null
+    };
+    
+    const key = `${userAchievement.userId}-${userAchievement.achievementId}`;
+    this.userAchievements.set(key, newUserAchievement);
+    
+    // Award reputation points for achievement
+    const achievement = this.achievements.get(userAchievement.achievementId);
+    if (achievement) {
+      this.updateUserReputation(userAchievement.userId, achievement.points);
+    }
+    
+    return newUserAchievement;
+  }
+  
+  async hasAchievement(userId: number, achievementId: number): Promise<boolean> {
+    const key = `${userId}-${achievementId}`;
+    return this.userAchievements.has(key);
+  }
+  
+  async getUnseenAchievements(userId: number): Promise<Achievement[]> {
+    // Get achievements that haven't been marked as seen
+    const achievementIds = Array.from(this.userAchievements.values())
+      .filter(ua => ua.userId === userId && !ua.seenAt)
+      .map(ua => ua.achievementId);
+    
+    return Array.from(this.achievements.values())
+      .filter(achievement => achievementIds.includes(achievement.id));
+  }
+  
+  async markAchievementAsSeen(userId: number, achievementId: number): Promise<void> {
+    const key = `${userId}-${achievementId}`;
+    const userAchievement = this.userAchievements.get(key);
+    
+    if (userAchievement) {
+      userAchievement.seenAt = new Date();
+      this.userAchievements.set(key, userAchievement);
+    }
+  }
+  
+  async checkAndAwardAchievements(userId: number): Promise<Achievement[]> {
+    // Implementation for various achievement criteria checks
+    const awardedAchievements: Achievement[] = [];
+    const user = this.users.get(userId);
+    if (!user) return [];
+    
+    // Check achievement criteria and award achievements
+    // We'll implement the logic for common achievements
+    
+    // 1. First Upload Achievement
+    if (!await this.hasAchievement(userId, 1)) {
+      const userScripts = await this.getUserScripts(userId);
+      if (userScripts.length > 0) {
+        // Create the achievement if it doesn't exist
+        let achievement = await this.getAchievementById(1);
+        if (!achievement) {
+          achievement = await this.createAchievement({
+            name: "First Upload",
+            description: "Upload your first script to the platform",
+            imageUrl: "https://images.unsplash.com/photo-1497005367839-6e852de72767?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80",
+            points: 10,
+            criteria: "Upload at least 1 script"
+          });
+        }
+        
+        await this.awardAchievement({
+          userId,
+          achievementId: achievement.id
+        });
+        
+        awardedAchievements.push(achievement);
+      }
+    }
+    
+    // 2. Popular Creator Achievement 
+    if (!await this.hasAchievement(userId, 2)) {
+      const userScripts = await this.getUserScripts(userId);
+      const totalViews = userScripts.reduce((sum, script) => sum + (script.views || 0), 0);
+      
+      if (totalViews >= 100) {
+        // Create the achievement if it doesn't exist
+        let achievement = await this.getAchievementById(2);
+        if (!achievement) {
+          achievement = await this.createAchievement({
+            name: "Popular Creator",
+            description: "Your scripts have been viewed 100 times",
+            imageUrl: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80",
+            points: 25,
+            criteria: "Get 100 views across all your scripts"
+          });
+        }
+        
+        await this.awardAchievement({
+          userId,
+          achievementId: achievement.id
+        });
+        
+        awardedAchievements.push(achievement);
+      }
+    }
+    
+    // 3. Social Butterfly Achievement
+    if (!await this.hasAchievement(userId, 3)) {
+      const followCount = await this.getFollowCount(userId);
+      
+      if (followCount.followers >= 5) {
+        // Create the achievement if it doesn't exist
+        let achievement = await this.getAchievementById(3);
+        if (!achievement) {
+          achievement = await this.createAchievement({
+            name: "Social Butterfly",
+            description: "Get followed by at least 5 other users",
+            imageUrl: "https://images.unsplash.com/photo-1505483531331-fc3cf89fd382?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80",
+            points: 30,
+            criteria: "Have 5 or more followers"
+          });
+        }
+        
+        await this.awardAchievement({
+          userId,
+          achievementId: achievement.id
+        });
+        
+        awardedAchievements.push(achievement);
+      }
+    }
+    
+    // 4. Reputable Member Achievement
+    if (!await this.hasAchievement(userId, 4)) {
+      if (user.reputation >= 50) {
+        // Create the achievement if it doesn't exist
+        let achievement = await this.getAchievementById(4);
+        if (!achievement) {
+          achievement = await this.createAchievement({
+            name: "Reputable Member",
+            description: "Earn 50 reputation points on the platform",
+            imageUrl: "https://images.unsplash.com/photo-1618044733300-9472054094ee?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80",
+            points: 20,
+            criteria: "Earn 50 reputation points"
+          });
+        }
+        
+        await this.awardAchievement({
+          userId,
+          achievementId: achievement.id
+        });
+        
+        awardedAchievements.push(achievement);
+      }
+    }
+    
+    return awardedAchievements;
   }
 
   // Analytics operations
