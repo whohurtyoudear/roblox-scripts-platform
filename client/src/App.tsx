@@ -40,6 +40,13 @@ function Router() {
     }, 2000);
   };
 
+  // Handle script deletion - refreshes scripts list
+  const handleScriptDeleted = () => {
+    // Script was deleted, we'll automatically close the modal
+    // The refresh of the script list will happen via query invalidation
+    closeScriptDetail();
+  };
+
   return (
     <>
       <Switch>
@@ -69,6 +76,7 @@ function Router() {
           script={selectedScript} 
           onClose={closeScriptDetail} 
           showNotification={showNotification}
+          onDelete={handleScriptDeleted}
         />
       )}
       

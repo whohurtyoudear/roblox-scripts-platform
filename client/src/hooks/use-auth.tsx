@@ -9,13 +9,13 @@ import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
-  user: User | null;
+  user: (User & { isAdmin?: boolean }) | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<{ user: User }, Error, LoginData>;
+  loginMutation: UseMutationResult<{ user: User & { isAdmin?: boolean } }, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<{ user: User }, Error, RegisterData>;
-  updateProfileMutation: UseMutationResult<{ user: User }, Error, ProfileUpdateData>;
+  registerMutation: UseMutationResult<{ user: User & { isAdmin?: boolean } }, Error, RegisterData>;
+  updateProfileMutation: UseMutationResult<{ user: User & { isAdmin?: boolean } }, Error, ProfileUpdateData>;
 };
 
 type LoginData = {
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data,
     error,
     isLoading,
-  } = useQuery<{ user: User } | undefined, Error>({
+  } = useQuery<{ user: User & { isAdmin?: boolean } } | undefined, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
