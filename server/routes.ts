@@ -96,6 +96,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Check if a script is in the user's favorites
+  app.get('/api/scripts/:id/favorite/check', isAuthenticated, async (req, res) => {
+    try {
+      const scriptId = parseInt(req.params.id, 10);
+      const userId = req.user!.id;
+      
+      if (isNaN(scriptId)) {
+        return res.status(400).json({ message: 'Invalid script ID' });
+      }
+      
+      const isFavorite = await storage.isFavorite(userId, scriptId);
+      return res.json({ isFavorite });
+    } catch (error) {
+      console.error('Failed to check favorite status:', error);
+      return res.status(500).json({ message: 'Failed to check favorite status' });
+    }
+  });
+  
   app.post('/api/scripts/:id/favorite', isAuthenticated, async (req, res) => {
     try {
       const scriptId = parseInt(req.params.id, 10);

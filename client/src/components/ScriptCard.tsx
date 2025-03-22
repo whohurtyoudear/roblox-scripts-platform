@@ -1,6 +1,9 @@
 import { Script } from '@shared/schema';
 import { useClipboard } from '../hooks/useClipboard';
-import { ExternalLink, Copy, MessageSquare } from 'lucide-react';
+import { ExternalLink, Copy, MessageSquare, Heart } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 interface ScriptCardProps {
   script: Script;
@@ -10,6 +13,57 @@ interface ScriptCardProps {
 
 const ScriptCard = ({ script, onScriptDetail, showNotification }: ScriptCardProps) => {
   const { copyToClipboard } = useClipboard();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
+  // Check if this script is favorited by the current user
+  const { data: isFavorited = false, isLoading: isFavoriteLoading } = useQuery<boolean>({
+    queryKey: [`/api/scripts/${script.id}/favorite/check`],
+    queryFn: async () => {
+      try {
+        if (!user) return false;
+        const res = await apiRequest('GET', `/api/scripts/${script.id}/favorite/check`);
+        const data = await res.json();
+        return data.isFavorite;
+      } catch (error) {
+        return false;
+      }
+    },
+    enabled: !!user, // Only run if user is logged in
+  });
+  
+  // Mutations for adding/removing favorites
+  const addFavorite = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/scripts/${script.id}/favorite`);
+      return res.json();
+    },
+    onSuccess: () => {
+      showNotification('Added to favorites!');
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: [`/api/scripts/${script.id}/favorite/check`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/favorites'] });
+    },
+    onError: (error: Error) => {
+      showNotification(`Error: ${error.message}`);
+    },
+  });
+  
+  const removeFavorite = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('DELETE', `/api/scripts/${script.id}/favorite`);
+      return res.json();
+    },
+    onSuccess: () => {
+      showNotification('Removed from favorites');
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: [`/api/scripts/${script.id}/favorite/check`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/favorites'] });
+    },
+    onError: (error: Error) => {
+      showNotification(`Error: ${error.message}`);
+    },
+  });
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -84,15 +138,38 @@ const ScriptCard = ({ script, onScriptDetail, showNotification }: ScriptCardProp
         </div>
         
         <div className="flex justify-between items-center">
-          <a 
-            href={script.discordLink || "https://discord.gg/zM3V4J98m6"} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="inline-flex items-center gap-2 bg-[#5865F2] text-white py-2 px-4 rounded-lg text-sm hover:bg-[#4752c4] transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MessageSquare className="h-4 w-4" /> Join Discord
-          </a>
+          <div className="flex items-center gap-2">
+            <a 
+              href={script.discordLink || "https://discord.gg/zM3V4J98m6"} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex items-center gap-2 bg-[#5865F2] text-white py-2 px-4 rounded-lg text-sm hover:bg-[#4752c4] transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MessageSquare className="h-4 w-4" /> Join Discord
+            </a>
+            
+            {user && (
+              <button 
+                className={`p-2 rounded-full ${isFavorited ? 'bg-pink-500/20' : 'bg-muted/30'} transition-colors`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isFavorited) {
+                    removeFavorite.mutate();
+                  } else {
+                    addFavorite.mutate();
+                  }
+                }}
+                disabled={isFavoriteLoading || addFavorite.isPending || removeFavorite.isPending}
+                title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+              >
+                <Heart 
+                  className={`h-5 w-5 ${isFavorited ? 'text-pink-500 fill-pink-500' : 'text-muted-foreground'}`} 
+                />
+              </button>
+            )}
+          </div>
+          
           <button 
             className="text-primary hover:text-[#4f46e5] transition-colors inline-flex items-center gap-1"
             onClick={onScriptDetail}

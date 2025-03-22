@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Script } from '@shared/schema';
 import { useClipboard } from '../hooks/useClipboard';
 import { format } from 'date-fns';
-import { X, ExternalLink, Copy, MessageSquare, Trash, Edit, AlertCircle } from 'lucide-react';
+import { X, ExternalLink, Copy, MessageSquare, Trash, Edit, AlertCircle, Heart } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface ScriptDetailModalProps {
@@ -18,6 +18,55 @@ const ScriptDetailModal = ({ script, onClose, showNotification, onDelete }: Scri
   const { copyToClipboard } = useClipboard();
   const { user } = useAuth();
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Check if this script is favorited by the current user
+  const { data: isFavorited = false, isLoading: isFavoriteLoading } = useQuery<boolean>({
+    queryKey: [`/api/scripts/${script.id}/favorite/check`],
+    queryFn: async () => {
+      try {
+        if (!user) return false;
+        const res = await apiRequest('GET', `/api/scripts/${script.id}/favorite/check`);
+        const data = await res.json();
+        return data.isFavorite;
+      } catch (error) {
+        return false;
+      }
+    },
+    enabled: !!user, // Only run if user is logged in
+  });
+  
+  // Mutations for adding/removing favorites
+  const addFavorite = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', `/api/scripts/${script.id}/favorite`);
+      return res.json();
+    },
+    onSuccess: () => {
+      showNotification('Added to favorites!');
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: [`/api/scripts/${script.id}/favorite/check`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/favorites'] });
+    },
+    onError: (error: Error) => {
+      showNotification(`Error: ${error.message}`);
+    },
+  });
+  
+  const removeFavorite = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('DELETE', `/api/scripts/${script.id}/favorite`);
+      return res.json();
+    },
+    onSuccess: () => {
+      showNotification('Removed from favorites');
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: [`/api/scripts/${script.id}/favorite/check`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/favorites'] });
+    },
+    onError: (error: Error) => {
+      showNotification(`Error: ${error.message}`);
+    },
+  });
 
   const deleteScriptMutation = useMutation({
     mutationFn: async () => {
@@ -142,6 +191,30 @@ const ScriptDetailModal = ({ script, onClose, showNotification, onDelete }: Scri
               >
                 <MessageSquare className="h-4 w-4" /> Join Discord
               </a>
+              
+              {/* Favorite button for logged in users */}
+              {user && (
+                <button 
+                  className={`inline-flex items-center gap-2 py-2 px-4 rounded-lg transition-colors ${
+                    isFavorited 
+                      ? 'bg-pink-500/20 text-pink-500' 
+                      : 'bg-slate-700/50 text-white hover:bg-slate-700/70'
+                  }`}
+                  onClick={() => {
+                    if (isFavorited) {
+                      removeFavorite.mutate();
+                    } else {
+                      addFavorite.mutate();
+                    }
+                  }}
+                  disabled={isFavoriteLoading || addFavorite.isPending || removeFavorite.isPending}
+                >
+                  <Heart 
+                    className={`h-4 w-4 ${isFavorited ? 'fill-pink-500' : ''}`} 
+                  />
+                  {isFavorited ? 'Unfavorite' : 'Add to Favorites'}
+                </button>
+              )}
               
               {/* Admin/Moderator actions */}
               {(user?.role === 'admin' || user?.role === 'moderator') && (
