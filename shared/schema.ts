@@ -274,4 +274,7 @@ export const insertScriptSchema = createInsertSchema(scripts)
   });
 
 export type InsertScript = z.infer<typeof insertScriptSchema>;
-export type Script = typeof scripts.$inferSelect;
+export type Script = typeof scripts.$inferSelect & {
+  // Added for backward compatibility with components that expect createdAt
+  createdAt?: Date;
+};

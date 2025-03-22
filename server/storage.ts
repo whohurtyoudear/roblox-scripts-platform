@@ -206,21 +206,36 @@ export class MemStorage implements IStorage {
 
   // Script operations
   async getAllScripts(): Promise<Script[]> {
-    return Array.from(this.scripts.values());
+    return Array.from(this.scripts.values()).map(script => ({
+      ...script,
+      createdAt: script.lastUpdated // Map lastUpdated to createdAt for backward compatibility
+    }));
   }
 
   async getScriptById(id: number): Promise<Script | undefined> {
-    return this.scripts.get(id);
+    const script = this.scripts.get(id);
+    if (script) {
+      return {
+        ...script,
+        createdAt: script.lastUpdated // Map lastUpdated to createdAt for backward compatibility
+      };
+    }
+    return undefined;
   }
 
   async searchScripts(query: string): Promise<Script[]> {
     const searchTerm = query.toLowerCase();
-    return Array.from(this.scripts.values()).filter(script =>
-      script.title.toLowerCase().includes(searchTerm) ||
-      script.description.toLowerCase().includes(searchTerm) ||
-      (script.gameType && script.gameType.toLowerCase().includes(searchTerm)) ||
-      (script.gameLink && script.gameLink.toLowerCase().includes(searchTerm))
-    );
+    return Array.from(this.scripts.values())
+      .filter(script =>
+        script.title.toLowerCase().includes(searchTerm) ||
+        script.description.toLowerCase().includes(searchTerm) ||
+        (script.gameType && script.gameType.toLowerCase().includes(searchTerm)) ||
+        (script.gameLink && script.gameLink.toLowerCase().includes(searchTerm))
+      )
+      .map(script => ({
+        ...script,
+        createdAt: script.lastUpdated // Map lastUpdated to createdAt for backward compatibility
+      }));
   }
 
   async createScript(insertScript: InsertScript, userId?: number): Promise<Script> {
@@ -260,7 +275,12 @@ export class MemStorage implements IStorage {
   }
 
   async getUserScripts(userId: number): Promise<Script[]> {
-    return Array.from(this.scripts.values()).filter(script => script.userId === userId);
+    return Array.from(this.scripts.values())
+      .filter(script => script.userId === userId)
+      .map(script => ({
+        ...script,
+        createdAt: script.lastUpdated // Map lastUpdated to createdAt for backward compatibility
+      }));
   }
   
   async updateScript(id: number, scriptData: Partial<Omit<Script, "id">>): Promise<Script | undefined> {
@@ -567,7 +587,11 @@ export class MemStorage implements IStorage {
     return Array.from(this.scripts.values())
       .filter(script => script.featuredRank !== null)
       .sort((a, b) => (a.featuredRank || 999) - (b.featuredRank || 999))
-      .slice(0, limit);
+      .slice(0, limit)
+      .map(script => ({
+        ...script,
+        createdAt: script.lastUpdated // Map lastUpdated to createdAt for backward compatibility
+      }));
   }
 
   async incrementScriptViews(id: number): Promise<void> {
@@ -695,7 +719,12 @@ export class MemStorage implements IStorage {
   }
 
   async getScriptsByCategory(categoryId: number): Promise<Script[]> {
-    return Array.from(this.scripts.values()).filter(script => script.categoryId === categoryId);
+    return Array.from(this.scripts.values())
+      .filter(script => script.categoryId === categoryId)
+      .map(script => ({
+        ...script,
+        createdAt: script.lastUpdated // Map lastUpdated to createdAt for backward compatibility
+      }));
   }
 
   // Ad campaign operations
