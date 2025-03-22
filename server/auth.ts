@@ -186,12 +186,12 @@ export function setupAuth(app: Express) {
   
   // Create admin user (admin only)
   app.post("/api/admin/create-user", async (req, res) => {
-    if (!req.isAuthenticated() || !req.user!.isAdmin) {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') {
       return res.status(403).json({ error: "Admin access required" });
     }
     
     try {
-      const { username, password, email, isAdmin } = req.body;
+      const { username, password, email, role } = req.body;
       
       if (!username || !password) {
         return res.status(400).json({ error: "Username and password are required" });
@@ -199,6 +199,11 @@ export function setupAuth(app: Express) {
       
       if (password.length < 6) {
         return res.status(400).json({ error: "Password must be at least 6 characters long" });
+      }
+      
+      // Validate role
+      if (role && !['user', 'moderator', 'admin'].includes(role)) {
+        return res.status(400).json({ error: "Invalid role. Must be user, moderator, or admin" });
       }
       
       const existingUser = await storage.getUserByUsername(username);
@@ -210,7 +215,7 @@ export function setupAuth(app: Express) {
         username,
         password,
         email: email || null,
-        isAdmin: isAdmin === true
+        role: role || 'user'
       });
       
       res.status(201).json({ 
@@ -219,7 +224,7 @@ export function setupAuth(app: Express) {
           id: user.id,
           username: user.username,
           email: user.email,
-          isAdmin: user.isAdmin
+          role: user.role
         } 
       });
     } catch (error) {
