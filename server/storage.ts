@@ -499,25 +499,20 @@ export class MemStorage implements IStorage {
 
   private addInitialTags() {
     const tags: InsertTag[] = [
-      { name: "Aimbot", slug: "aimbot" },
-      { name: "ESP", slug: "esp" },
-      { name: "Auto Farm", slug: "auto-farm" },
-      { name: "GUI", slug: "gui" },
-      { name: "Admin", slug: "admin" },
-      { name: "Silent Aim", slug: "silent-aim" },
-      { name: "Teleport", slug: "teleport" },
-      { name: "Speed", slug: "speed" },
-      { name: "Hitbox", slug: "hitbox" },
-      { name: "Infinite Jump", slug: "infinite-jump" }
+      { name: "Aimbot", slug: "aimbot", description: "Automatic aiming scripts", color: "#ff0000" },
+      { name: "ESP", slug: "esp", description: "Wall hacks and player detection", color: "#00ff00" },
+      { name: "Auto Farm", slug: "auto-farm", description: "Automatic resource farming", color: "#0000ff" },
+      { name: "GUI", slug: "gui", description: "Graphical user interfaces", color: "#ffff00" },
+      { name: "Admin", slug: "admin", description: "Administrative tools", color: "#ff00ff" },
+      { name: "Silent Aim", slug: "silent-aim", description: "Hidden aiming assistance", color: "#00ffff" },
+      { name: "Teleport", slug: "teleport", description: "Location teleportation", color: "#ff5500" },
+      { name: "Speed", slug: "speed", description: "Character speed modification", color: "#5500ff" },
+      { name: "Hitbox", slug: "hitbox", description: "Hitbox modification scripts", color: "#55ff00" },
+      { name: "Infinite Jump", slug: "infinite-jump", description: "Unlimited jumping ability", color: "#00ff55" }
     ];
 
     tags.forEach(tag => {
-      const id = this.tagId++;
-      this.tags.set(id, {
-        ...tag,
-        id,
-        createdAt: new Date()
-      });
+      this.createTag(tag);
     });
   }
 
