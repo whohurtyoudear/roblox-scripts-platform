@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import BackButton from "@/components/BackButton";
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
@@ -50,6 +51,11 @@ export default function AuthPage() {
   
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Back Button */}
+      <div className="absolute top-6 left-6">
+        <BackButton defaultPath="/" />
+      </div>
+      
       {/* Auth Form Side */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-10">
         <Card className="w-full max-w-md">
