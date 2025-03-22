@@ -2460,14 +2460,19 @@ export class DatabaseStorage implements IStorage {
   
   async getScriptRating(scriptId: number): Promise<number> { 
     try {
-      const avgRating = await db
+      const result = await db
         .select({ 
-          avgRating: drizzleSql`AVG(${ratings.value})` 
+          avgRating: drizzleSql`AVG(${ratings.value})::float` 
         })
         .from(ratings)
         .where(eq(ratings.scriptId, scriptId));
       
-      return avgRating[0]?.avgRating || 0;
+      // Handle case where there are no ratings
+      if (!result[0] || result[0].avgRating === null) {
+        return 0;
+      }
+      
+      return result[0].avgRating as number;
     } catch (error) {
       console.error('Error getting script rating:', error);
       return 0;
@@ -2520,18 +2525,20 @@ export class DatabaseStorage implements IStorage {
       // Get average rating and count
       const ratingStats = await db
         .select({
-          avgRating: drizzleSql`AVG(${ratings.value})`,
-          count: drizzleSql`COUNT(*)`
+          avgRating: drizzleSql`AVG(${ratings.value})::float`,
+          count: drizzleSql`COUNT(*)::int`
         })
         .from(ratings)
         .where(eq(ratings.scriptId, scriptId));
       
-      // Convert the avg rating to a number and handle null cases
-      const avgRatingValue = typeof ratingStats[0]?.avgRating === 'number' 
-        ? ratingStats[0].avgRating 
-        : parseFloat(ratingStats[0]?.avgRating as string) || 0;
+      // Handle case where there are no ratings
+      const avgRatingValue = !ratingStats[0] || ratingStats[0].avgRating === null 
+        ? 0 
+        : ratingStats[0].avgRating as number;
       
-      const ratingCount = Number(ratingStats[0]?.count || 0);
+      const ratingCount = !ratingStats[0] || ratingStats[0].count === null
+        ? 0
+        : Number(ratingStats[0].count);
       
       // Update the script with the new average rating and count
       await db
