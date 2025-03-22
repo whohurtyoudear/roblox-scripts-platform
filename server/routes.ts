@@ -34,6 +34,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'API is working!' });
   });
   
+  // PUBLIC API for Roblox executors and other external services
+  app.get('/api/v1/scripts', async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;  // Higher default limit for integration
+      const offset = (page - 1) * limit;
+      
+      // Optional category filter
+      const categoryId = req.query.category ? parseInt(req.query.category as string) : null;
+      // Optional tag filter
+      const tagId = req.query.tag ? parseInt(req.query.tag as string) : null;
+      // Optional search query
+      const searchQuery = req.query.search as string || '';
+      
+      let scripts;
+      
+      // Determine which scripts to fetch based on filters
+      if (categoryId) {
+        scripts = await storage.getScriptsByCategory(categoryId);
+      } else if (tagId) {
+        scripts = await storage.getScriptsByTag(tagId);
+      } else if (searchQuery) {
+        scripts = await storage.searchScripts(searchQuery);
+      } else {
+        scripts = await storage.getAllScripts();
+      }
+      
+      // Manual pagination since we might be combining results from different sources
+      const total = scripts.length;
+      const totalPages = Math.ceil(total / limit);
+      const paginatedScripts = scripts.slice(offset, offset + limit);
+      
+      // Map to include only necessary fields for external use
+      const formattedScripts = paginatedScripts.map(script => ({
+        id: script.id,
+        title: script.title,
+        description: script.description,
+        code: script.code,
+        gameLink: script.gameLink || null,
+        gameType: script.gameType || null,
+        category: script.categoryId,
+        tags: [], // We'll need to add tag fetching here
+        views: script.views || 0,
+        copies: script.copies || 0,
+        avgRating: script.avgRating || 0,
+        lastUpdated: script.lastUpdated || script.createdAt
+      }));
+      
+      // Get tags for each script in the result set
+      for (const script of formattedScripts) {
+        const tags = await storage.getTagsForScript(script.id);
+        script.tags = tags.map(tag => ({
+          id: tag.id,
+          name: tag.name,
+          slug: tag.slug
+        }));
+      }
+      
+      // Return paginated results with metadata
+      return res.json({
+        scripts: formattedScripts,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching scripts for API:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch scripts',
+        message: 'An internal server error occurred while processing your request.'
+      });
+    }
+  });
+  
+  // Detailed script endpoint for external services
+  app.get('/api/v1/scripts/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid script ID', message: 'The script ID must be a valid number.' });
+      }
+      
+      const script = await storage.getScriptById(id);
+      if (!script) {
+        return res.status(404).json({ error: 'Script not found', message: 'The requested script does not exist.' });
+      }
+      
+      // Get tags for this script
+      const tags = await storage.getTagsForScript(id);
+      
+      // Increment view count
+      await storage.incrementScriptViews(id);
+      
+      // Format response with all necessary fields
+      const response = {
+        id: script.id,
+        title: script.title,
+        description: script.description,
+        code: script.code,
+        gameLink: script.gameLink || null,
+        gameType: script.gameType || null,
+        category: script.categoryId,
+        tags: tags.map(tag => ({
+          id: tag.id,
+          name: tag.name,
+          slug: tag.slug
+        })),
+        views: script.views || 0,
+        copies: script.copies || 0,
+        avgRating: script.avgRating || 0,
+        lastUpdated: script.lastUpdated || script.createdAt
+      };
+      
+      return res.json(response);
+    } catch (error) {
+      console.error('Error fetching script details for API:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch script details',
+        message: 'An internal server error occurred while processing your request.'
+      });
+    }
+  });
+  
+  // Categories list for external services
+  app.get('/api/v1/categories', async (req, res) => {
+    try {
+      const categories = await storage.getAllCategories();
+      return res.json(categories);
+    } catch (error) {
+      console.error('Error fetching categories for API:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch categories',
+        message: 'An internal server error occurred while processing your request.'
+      });
+    }
+  });
+  
+  // Tags list for external services
+  app.get('/api/v1/tags', async (req, res) => {
+    try {
+      const tags = await storage.getAllTags();
+      return res.json(tags);
+    } catch (error) {
+      console.error('Error fetching tags for API:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch tags',
+        message: 'An internal server error occurred while processing your request.'
+      });
+    }
+  });
+  
   // Add a redirect for index.html to the root path
   app.get('/index.html', (req, res) => {
     res.redirect('/');
