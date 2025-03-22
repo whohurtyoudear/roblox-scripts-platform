@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getQueryFn, apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -120,6 +120,30 @@ export default function AdCampaignManagement() {
   const [showBannerDialog, setShowBannerDialog] = useState(false);
   const [dateRange, setDateRange] = useState('7days');
   const [selectedCampaignForStats, setSelectedCampaignForStats] = useState<number | 'all'>('all');
+  
+  // Refs for chart containers
+  const lineChartRef = useRef<HTMLDivElement>(null);
+  const barChartRef = useRef<HTMLDivElement>(null);
+  
+  // Setup ResizeObserver for charts
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      // Force re-render to update charts
+      setActiveTab(prev => prev);
+    });
+    
+    if (lineChartRef.current) {
+      resizeObserver.observe(lineChartRef.current);
+    }
+    
+    if (barChartRef.current) {
+      resizeObserver.observe(barChartRef.current);
+    }
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   // Fetch campaigns
   const { data: campaignsData, isLoading: isLoadingCampaigns } = useQuery({
@@ -910,8 +934,8 @@ export default function AdCampaignManagement() {
                     <CardDescription>Impressions and clicks over time</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div className="h-[300px]" ref={lineChartRef}>
+                      <ResponsiveContainer width="100%" height="100%" key={`line-chart-${activeTab}-${dateRange}-${selectedCampaignForStats}`}>
                         <LineChart data={stats.dailyStats || []} margin={{ top: 5, right: 30, left: 20, bottom: 25 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#2e3a4f" />
                           <XAxis dataKey="date" />
@@ -945,8 +969,8 @@ export default function AdCampaignManagement() {
                     <CardDescription>Comparing all campaigns</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div className="h-[300px]" ref={barChartRef}>
+                      <ResponsiveContainer width="100%" height="100%" key={`bar-chart-${activeTab}-${dateRange}-${selectedCampaignForStats}`}>
                         <BarChart 
                           data={stats.campaignStats || []} 
                           margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
