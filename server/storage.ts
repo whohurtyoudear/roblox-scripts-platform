@@ -76,19 +76,31 @@ export class MemStorage implements IStorage {
     return Array.from(this.scripts.values()).filter(script =>
       script.title.toLowerCase().includes(searchTerm) ||
       script.description.toLowerCase().includes(searchTerm) ||
-      script.gameType.toLowerCase().includes(searchTerm)
+      (script.gameType && script.gameType.toLowerCase().includes(searchTerm)) ||
+      (script.gameLink && script.gameLink.toLowerCase().includes(searchTerm))
     );
   }
 
   async createScript(insertScript: InsertScript, userId?: number): Promise<Script> {
     const id = this.scriptId++;
+    
+    // Convert lastUpdated to Date if it's a string
+    let lastUpdated: Date;
+    if (typeof insertScript.lastUpdated === 'string') {
+      lastUpdated = new Date(insertScript.lastUpdated);
+    } else if (insertScript.lastUpdated instanceof Date) {
+      lastUpdated = insertScript.lastUpdated;
+    } else {
+      lastUpdated = new Date();
+    }
+    
     const script: Script = { 
       ...insertScript, 
       id, 
       userId: userId || null, 
       isApproved: true,
       discordLink: insertScript.discordLink || null,
-      lastUpdated: insertScript.lastUpdated || new Date()
+      lastUpdated: lastUpdated
     };
     this.scripts.set(id, script);
     return script;
@@ -163,6 +175,7 @@ export class MemStorage implements IStorage {
         imageUrl: "https://images.unsplash.com/photo-1633409361618-c73427e4e206?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80",
         discordLink: "https://discord.gg/devscripts",
         gameType: "Blade Ball",
+        gameLink: "https://www.roblox.com/games/13772394625/Blade-Ball",
         lastUpdated: new Date()
       },
       {
@@ -172,6 +185,7 @@ export class MemStorage implements IStorage {
         imageUrl: "https://images.unsplash.com/photo-1602673221577-0b56d7ce446b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80",
         discordLink: "https://discord.gg/devscripts",
         gameType: "Blox Fruits",
+        gameLink: "https://www.roblox.com/games/2753915549/Blox-Fruits",
         lastUpdated: new Date()
       },
       {
@@ -181,6 +195,7 @@ export class MemStorage implements IStorage {
         imageUrl: "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80",
         discordLink: "https://discord.gg/devscripts",
         gameType: "Pet Simulator X",
+        gameLink: "https://www.roblox.com/games/6284583030/Pet-Simulator-X",
         lastUpdated: new Date()
       },
       {
@@ -190,6 +205,7 @@ export class MemStorage implements IStorage {
         imageUrl: "https://images.unsplash.com/photo-1614741118887-7a4ee193a5fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80",
         discordLink: "https://discord.gg/devscripts",
         gameType: "Arsenal",
+        gameLink: "https://www.roblox.com/games/286090429/Arsenal",
         lastUpdated: new Date()
       },
       {
@@ -199,6 +215,7 @@ export class MemStorage implements IStorage {
         imageUrl: "https://images.unsplash.com/photo-1551103782-8ab07afd45c1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80",
         discordLink: "https://discord.gg/devscripts",
         gameType: "Doors",
+        gameLink: "https://www.roblox.com/games/6516141723/DOORS",
         lastUpdated: new Date()
       },
       {
@@ -208,6 +225,7 @@ export class MemStorage implements IStorage {
         imageUrl: "https://images.unsplash.com/photo-1640955014216-75201056c829?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80",
         discordLink: "https://discord.gg/devscripts",
         gameType: "Brookhaven",
+        gameLink: "https://www.roblox.com/games/4924922222/Brookhaven-RP",
         lastUpdated: new Date()
       }
     ];
