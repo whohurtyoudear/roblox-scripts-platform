@@ -439,7 +439,7 @@ export default function ProfilePage() {
                         <div className="flex gap-4 mt-4">
                           <div className="flex items-center text-sm">
                             <User className="h-4 w-4 mr-1 text-muted-foreground" />
-                            {script.authorName || "Unknown"}
+                            {(script.userId && script.userId.toString() === user.id.toString()) ? "You" : "Unknown"}
                           </div>
                           <div className="flex items-center text-sm">
                             <Star className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -449,11 +449,11 @@ export default function ProfilePage() {
                             <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
                             {formatDate(script.createdAt)}
                           </div>
-                          {script.gameUrl && (
+                          {script.gameLink && (
                             <div className="flex items-center text-sm">
                               <ExternalLink className="h-4 w-4 mr-1 text-muted-foreground" />
                               <a 
-                                href={script.gameUrl} 
+                                href={script.gameLink} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="text-primary hover:underline"
