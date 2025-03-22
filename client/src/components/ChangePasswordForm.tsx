@@ -1,21 +1,52 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 
+interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export default function ChangePasswordForm() {
   const { toast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isChanging, setIsChanging] = useState(false);
   
   // Create a mutation for changing password
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const changePasswordMutation = useMutation({
+    mutationFn: async (data: ChangePasswordData) => {
+      const res = await apiRequest("PUT", "/api/change-password", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Password has been changed successfully",
+      });
+      
+      // Reset form
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to change password",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Input validation
@@ -46,44 +77,10 @@ export default function ChangePasswordForm() {
       return;
     }
     
-    setIsChanging(true);
-    
-    try {
-      const response = await fetch("/api/change-password", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to change password");
-      }
-      
-      toast({
-        title: "Success",
-        description: "Password has been changed successfully",
-      });
-      
-      // Reset form
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to change password",
-        variant: "destructive",
-      });
-    } finally {
-      setIsChanging(false);
-    }
+    changePasswordMutation.mutate({
+      currentPassword,
+      newPassword
+    });
   };
   
   return (
@@ -132,8 +129,8 @@ export default function ChangePasswordForm() {
         </CardContent>
         
         <CardFooter>
-          <Button type="submit" disabled={isChanging} className="w-full">
-            {isChanging ? (
+          <Button type="submit" disabled={changePasswordMutation.isPending} className="w-full">
+            {changePasswordMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Changing...
