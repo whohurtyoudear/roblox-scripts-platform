@@ -60,7 +60,7 @@ export function setupAuth(app: Express) {
   // Authentication routes
   app.post("/api/register", async (req, res, next) => {
     try {
-      const { username, password, email } = req.body;
+      const { username, password, email, role } = req.body;
       
       if (!username || !password) {
         return res.status(400).json({ error: "Username and password are required" });
@@ -71,10 +71,14 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Username already exists" });
       }
 
+      // Only allow role setting if it's a valid role
+      const validRole = role && ['user', 'moderator', 'admin'].includes(role) ? role : 'user';
+      
       const user = await storage.createUser({
         username,
         password,
         email,
+        role: validRole
       });
 
       req.login(user, (err) => {
