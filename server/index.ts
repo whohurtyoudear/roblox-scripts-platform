@@ -2,6 +2,24 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// For our Replit development environment, override the NODE_ENV detection
+// to prevent production mode from triggering in the development environment
+// This is needed because Replit IDs are present in both dev and production
+if (process.env.REPL_SLUG || process.env.REPL_ID) {
+  // Only use development mode for our current work
+  process.env.NODE_ENV = 'development';
+  console.log('Detected Replit environment, using development mode for now');
+}
+
+// Log environment information for debugging
+console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`Database: ${process.env.DATABASE_URL ? 'Available (from DATABASE_URL)' : 'Not available from URL'}`);
+console.log(`PostgreSQL Environment Variables: ${
+  process.env.PGHOST && process.env.PGUSER && process.env.PGDATABASE 
+  ? 'Available (from PG* vars)' 
+  : 'Not all available'
+}`);
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -65,12 +83,10 @@ app.use((req, res, next) => {
     res.status(404).json({ message: 'API endpoint not found' });
   });
 
-  // Setup Vite AFTER all API routes to prevent catch-all interference
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // Always use Vite for development in our current Replit environment
+  // This is a temporary fix until we properly build the client for production
+  console.log(`Using Vite for development (env: ${app.get("env")})`);
+  await setupVite(app, server);
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
