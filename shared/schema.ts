@@ -125,7 +125,8 @@ export const comments = pgTable("comments", {
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   isApproved: boolean("is_approved").default(true),
-  parentId: integer("parent_id").references(() => comments.id), // For nested comments
+  parentId: integer("parent_id"), // For nested comments
+  isDeleted: boolean("is_deleted").default(false)
 });
 
 export const insertCommentSchema = createInsertSchema(comments).omit({
@@ -142,7 +143,7 @@ export const ratings = pgTable("ratings", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   scriptId: integer("script_id").notNull().references(() => scripts.id),
-  rating: integer("rating").notNull(), // 1-5 stars
+  value: integer("value").notNull(), // 1-5 stars
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (t) => ({
   uniqueUserScript: primaryKey(t.userId, t.scriptId),
@@ -177,6 +178,7 @@ export const affiliateLinks = pgTable("affiliate_links", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at"),
   isActive: boolean("is_active").default(true),
+  clicks: integer("clicks").default(0),
 });
 
 export const insertAffiliateLinkSchema = createInsertSchema(affiliateLinks).omit({

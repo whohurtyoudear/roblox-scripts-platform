@@ -486,8 +486,12 @@ export class MemStorage implements IStorage {
     categories.forEach(category => {
       const id = this.categoryId++;
       this.categories.set(id, {
-        ...category,
         id,
+        name: category.name,
+        slug: category.slug,
+        description: category.description || null,
+        imageUrl: category.imageUrl || null,
+        order: category.order || null,
         createdAt: new Date()
       });
     });
@@ -529,8 +533,13 @@ export class MemStorage implements IStorage {
 
     const id = this.adCampaignId++;
     this.adCampaigns.set(id, {
-      ...campaign,
       id,
+      name: campaign.name,
+      description: campaign.description || null,
+      startDate: campaign.startDate,
+      endDate: campaign.endDate || null,
+      isActive: campaign.isActive || null,
+      createdBy: campaign.createdBy || null,
       createdAt: new Date()
     });
 
@@ -653,9 +662,13 @@ export class MemStorage implements IStorage {
   async createCategory(category: InsertCategory): Promise<Category> {
     const id = this.categoryId++;
     const newCategory: Category = { 
-      ...category, 
-      id, 
-      createdAt: new Date() 
+      id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description || null,
+      imageUrl: category.imageUrl || null,
+      order: category.order || null,
+      createdAt: new Date()
     };
     this.categories.set(id, newCategory);
     return newCategory;
@@ -682,8 +695,13 @@ export class MemStorage implements IStorage {
   async createAdCampaign(campaign: InsertAdCampaign): Promise<AdCampaign> {
     const id = this.adCampaignId++;
     const newCampaign: AdCampaign = {
-      ...campaign,
       id,
+      name: campaign.name,
+      description: campaign.description || null,
+      startDate: campaign.startDate,
+      endDate: campaign.endDate || null,
+      isActive: campaign.isActive || null,
+      createdBy: campaign.createdBy || null,
       createdAt: new Date()
     };
     this.adCampaigns.set(id, newCampaign);
@@ -715,8 +733,13 @@ export class MemStorage implements IStorage {
   async createAdBanner(banner: InsertAdBanner): Promise<AdBanner> {
     const id = this.adBannerId++;
     const newBanner: AdBanner = {
-      ...banner,
       id,
+      name: banner.name,
+      imageUrl: banner.imageUrl,
+      linkUrl: banner.linkUrl,
+      position: banner.position || null,
+      campaignId: banner.campaignId || null,
+      isActive: banner.isActive || null,
       impressions: 0,
       clicks: 0,
       createdAt: new Date()
@@ -905,11 +928,14 @@ export class MemStorage implements IStorage {
     const id = this.commentId++;
     
     const newComment: Comment = {
-      ...comment,
       id,
-      createdAt: new Date(),
+      userId: comment.userId,
+      scriptId: comment.scriptId,
+      content: comment.content,
+      parentId: comment.parentId || null,
       isApproved: false,
-      isDeleted: false
+      isDeleted: false,
+      createdAt: new Date()
     };
     
     this.comments.set(id, newComment);
