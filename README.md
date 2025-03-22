@@ -1,54 +1,56 @@
-# Roblox Scripts Discovery Platform
+# Roblox Scripts Platform
 
-A comprehensive platform for game developers and script enthusiasts, providing a complete ecosystem for script sharing, exploration, and collaboration.
+A comprehensive platform for Roblox script discovery, sharing, and collaboration designed for game developers and script enthusiasts.
 
 ## Features
 
-- **Script Discovery**: Browse, search, and filter through a vast collection of Roblox scripts
-- **User Authentication**: Secure login/registration system with role-based access control
-- **Script Management**: Upload, edit, and manage your scripts
+- **Script Management**: Browse, search, upload, and manage Roblox scripts
+- **User Authentication**: Register, login, and manage your profile
+- **Categories & Tags**: Organize scripts by categories and tags for easy discovery
 - **Rating System**: Rate scripts with a 5-star rating system
-- **Favorites System**: Save your favorite scripts for later use
-- **Community Features**: Follow creators, vote on scripts, and earn achievements
-- **Admin Dashboard**: Comprehensive tools for content moderation and user management
-- **Affiliate System**: Track affiliate links with detailed statistics
-- **Monetization Options**: Ad banners, Work.ink popup integration, and popunder scripts
+- **Admin Dashboard**: Manage users, scripts, and site content
+- **API Integration**: External API endpoints for integration with Roblox executors
+- **Responsive Design**: Mobile-friendly interface
 
-## Tech Stack
+## Technology Stack
 
-- **Frontend**: React with TypeScript, Tailwind CSS, and Shadcn/UI components
-- **Backend**: Express.js with RESTful API architecture
-- **Database**: Memory-based storage with object persistence (can be upgraded to PostgreSQL)
-- **Authentication**: Session-based authentication with Passport.js
+- **Frontend**: React with TypeScript and Tailwind CSS
+- **Backend**: Express.js API
+- **Database**: PostgreSQL with Drizzle ORM
+- **Authentication**: Passport.js with session-based auth
+- **Styling**: Shadcn UI components
+
+## API Documentation
+
+The platform includes a public API for integration with Roblox executors and other external services:
+
+- `GET /api/v1/scripts` - List all scripts with pagination
+- `GET /api/v1/scripts/:id` - Get details for a specific script
+- `GET /api/v1/categories` - List all script categories
+- `GET /api/v1/tags` - List all available tags
+
+Detailed API documentation is available at `/api-docs` within the application.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 16+
+- PostgreSQL database
 
 ### Installation
 
-1. Clone the repository
-2. Install the dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Access the application at: `http://localhost:5000`
+1. Clone this repository
+2. Install dependencies with `npm install`
+3. Set up environment variables (see `.env.example`)
+4. Run database migrations with `npm run db:push`
+5. Start the development server with `npm run dev`
 
 ### Default Admin Account
 
 - Username: admin
-- Password: admin123
-
-## Extending the Application
-
-### Adding Custom Game Types
-
-Modify the script schema in `shared/schema.ts` to include new game types.
-
-### Adding New Features
-
-The modular architecture makes it easy to add new features by extending the API endpoints in `server/routes.ts` and adding corresponding UI components.
+- Password: admin123 (change this in production)
 
 ## License
 
-This project is licensed under the MIT License.
+[MIT License](LICENSE)
