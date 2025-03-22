@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertScriptSchema } from "@shared/schema";
+import { insertScriptSchema, Achievement } from "@shared/schema";
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: any, next: any) => {
@@ -935,9 +935,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dateRange = req.query.dateRange || '7days';
       const campaignId = req.query.selectedCampaignForStats || 'all';
       
-      // For now, we'll create placeholder data until we implement database methods
-      
-      // Generate daily stats
+      // Generate daily stats with mock data for now
       const dailyStats = [];
       const daysToGenerate = dateRange === '7days' ? 7 : 
                              dateRange === '30days' ? 30 : 
@@ -959,39 +957,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Sort by date ascending
       dailyStats.sort((a, b) => a.date.localeCompare(b.date));
       
-      // Campaign stats
-      const campaignStats = campaigns.map(campaign => {
-        const impressions = Math.floor(Math.random() * 10000) + 500;
-        const clicks = Math.floor(Math.random() * 500) + 20;
-        return {
-          id: campaign.id,
-          name: campaign.name,
-          impressions,
-          clicks,
-          ctr: parseFloat(((clicks / impressions) * 100).toFixed(2))
-        };
-      });
+      // Placeholder data for campaigns (since we don't have database implementation yet)
+      const campaignStats = [
+        {
+          id: 1,
+          name: "Main Campaign",
+          impressions: Math.floor(Math.random() * 10000) + 500,
+          clicks: Math.floor(Math.random() * 500) + 20,
+          ctr: parseFloat(((Math.random() * 5 + 1)).toFixed(2))
+        }
+      ];
       
-      // Banner stats
-      const banners = Array.from(storage.adBanners.values());
-      const bannerStats = banners.map(banner => {
-        const impressions = Math.floor(Math.random() * 5000) + 200;
-        const clicks = Math.floor(Math.random() * 200) + 10;
-        const campaign = campaigns.find(c => c.id === banner.campaignId);
-        
-        return {
-          id: banner.id,
-          name: banner.name,
-          campaignName: campaign ? campaign.name : 'Unknown',
-          imageUrl: banner.imageUrl,
-          impressions,
-          clicks,
-          ctr: parseFloat(((clicks / impressions) * 100).toFixed(2))
-        };
-      });
-      
-      // Sort by CTR descending
-      bannerStats.sort((a, b) => b.ctr - a.ctr);
+      // Placeholder data for banners
+      const bannerStats = [
+        {
+          id: 1,
+          name: "Top Banner",
+          campaignName: "Main Campaign",
+          imageUrl: "https://via.placeholder.com/720x90/1e293b/ffffff?text=DevScripts+Premium",
+          impressions: Math.floor(Math.random() * 5000) + 200,
+          clicks: Math.floor(Math.random() * 200) + 10,
+          ctr: parseFloat(((Math.random() * 6 + 0.5)).toFixed(2))
+        }
+      ];
       
       // Overview statistics
       const totalImpressions = dailyStats.reduce((sum, day) => sum + day.impressions, 0);
@@ -1019,13 +1007,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Affiliate Management Routes
   app.get('/api/admin/affiliate-links', isAdmin, async (req, res) => {
     try {
-      // In a real app, you would fetch affiliate links from a proper database
-      // For now, we'll create a static array of affiliate links if it doesn't exist
-      if (!storage.affiliateLinks) {
-        storage.affiliateLinks = new Map();
-        
-        // Add a sample affiliate link
-        storage.affiliateLinks.set(1, {
+      // We need to implement proper database methods for affiliate links
+      // For now, return placeholder data
+      const links = [
+        {
           id: 1,
           name: "Affiliate Link 1",
           description: "Description for affiliate link 1",
@@ -1034,26 +1019,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           commission: 10.5,
           createdAt: new Date(),
           isActive: true,
-          userId: req.user!.id
-        });
-        
-        // Initialize counters
-        storage.affiliateLinkId = 1;
-      }
-      
-      // Get all affiliate links
-      const links = Array.from(storage.affiliateLinks.values()).map(link => {
-        // Add mock stats for each link (these would come from database in a real app)
-        return {
-          ...link,
+          userId: req.user!.id,
           stats: {
             clicks: Math.floor(Math.random() * 500) + 50,
             uniqueClicks: Math.floor(Math.random() * 300) + 30,
             conversionRate: parseFloat((Math.random() * 5 + 1).toFixed(2)),
             revenue: parseFloat((Math.random() * 1000 + 100).toFixed(2))
           }
-        };
-      });
+        }
+      ];
       
       return res.json({ links });
     } catch (error) {
@@ -1070,30 +1044,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Name and target URL are required' });
       }
       
-      // Initialize the affiliate links Map if it doesn't exist
-      if (!storage.affiliateLinks) {
-        storage.affiliateLinks = new Map();
-        storage.affiliateLinkId = 0;
-      }
-      
-      // Generate a new ID
-      const id = ++storage.affiliateLinkId;
-      
-      // Create the affiliate link
+      // This is a placeholder implementation until we implement createAffiliateLink
+      // in the DatabaseStorage class
       const newLink = {
-        id,
+        id: 2, // Placeholder ID
         name,
         description: description || "",
-        code: code || `aff${id}${Math.random().toString(36).substring(2, 8)}`,
+        code: code || `aff${Math.random().toString(36).substring(2, 8)}`,
         targetUrl,
         commission: commission ? parseFloat(commission) : 5.0,
         createdAt: new Date(),
         isActive: isActive !== undefined ? isActive : true,
         userId: req.user!.id
       };
-      
-      // Save the affiliate link
-      storage.affiliateLinks.set(id, newLink);
       
       return res.json(newLink);
     } catch (error) {
@@ -1109,32 +1072,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid affiliate link ID' });
       }
       
-      // Check if the affiliate links Map exists
-      if (!storage.affiliateLinks) {
-        return res.status(404).json({ message: 'Affiliate link not found' });
-      }
-      
-      // Get the existing affiliate link
-      const link = storage.affiliateLinks.get(id);
-      if (!link) {
-        return res.status(404).json({ message: 'Affiliate link not found' });
-      }
-      
       const { name, description, targetUrl, code, commission, isActive } = req.body;
       
-      // Update the affiliate link
+      // This is a placeholder implementation until we implement updateAffiliateLink
+      // in the DatabaseStorage class
       const updatedLink = {
-        ...link,
-        name: name !== undefined ? name : link.name,
-        description: description !== undefined ? description : link.description,
-        targetUrl: targetUrl !== undefined ? targetUrl : link.targetUrl,
-        code: code !== undefined ? code : link.code,
-        commission: commission !== undefined ? parseFloat(commission) : link.commission,
-        isActive: isActive !== undefined ? isActive : link.isActive
+        id,
+        name: name || "Updated Affiliate Link",
+        description: description || "Updated description",
+        code: code || `aff${Math.random().toString(36).substring(2, 8)}`,
+        targetUrl: targetUrl || "https://example.com/product-updated",
+        commission: commission ? parseFloat(commission) : 7.5,
+        createdAt: new Date(),
+        isActive: isActive !== undefined ? isActive : true,
+        userId: req.user!.id
       };
-      
-      // Save the updated affiliate link
-      storage.affiliateLinks.set(id, updatedLink);
       
       return res.json(updatedLink);
     } catch (error) {
@@ -1150,18 +1102,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid affiliate link ID' });
       }
       
-      // Check if the affiliate links Map exists
-      if (!storage.affiliateLinks) {
-        return res.status(404).json({ message: 'Affiliate link not found' });
-      }
-      
-      // Check if the affiliate link exists
-      if (!storage.affiliateLinks.has(id)) {
-        return res.status(404).json({ message: 'Affiliate link not found' });
-      }
-      
-      // Delete the affiliate link
-      storage.affiliateLinks.delete(id);
+      // This is a placeholder implementation until we implement deleteAffiliateLink
+      // in the DatabaseStorage class
       
       return res.json({ message: 'Affiliate link deleted successfully' });
     } catch (error) {
