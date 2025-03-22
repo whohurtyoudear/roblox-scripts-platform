@@ -99,6 +99,13 @@ export default function EnhancedUserManagement() {
   const [selectedRole, setSelectedRole] = useState('');
   const [filter, setFilter] = useState('all');
   const perPage = 10;
+  
+  // New user form state
+  const [newUsername, setNewUsername] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newRole, setNewRole] = useState('user');
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
 
   // Fetch users
   const { data, isLoading } = useQuery({

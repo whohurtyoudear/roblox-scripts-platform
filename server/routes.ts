@@ -200,6 +200,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: 'Failed to fetch users' });
     }
   });
+  
+  // Admin endpoint to create a new user (admin only)
+  app.post('/api/admin/users', isAdmin, async (req, res) => {
+    try {
+      const { username, email, password, role } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required' });
+      }
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Username already exists' });
+      }
+      
+      // Create new user
+      const newUser = await storage.createUser({
+        username,
+        password,
+        email: email || '',
+        role: role || 'user',
+        bio: '',
+        avatarUrl: '',
+      });
+      
+      return res.status(201).json({
+        message: 'User created successfully',
+        user: { ...newUser, password: '[HIDDEN]' }
+      });
+    } catch (error) {
+      console.error('Failed to create user:', error);
+      return res.status(500).json({ message: 'Failed to create user' });
+    }
+  });
 
   // Admin endpoint to update user role (admin only)
   app.put('/api/admin/users/:id/role', isAdmin, async (req, res) => {
@@ -773,35 +808,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Affiliate Management Routes
   app.get('/api/admin/affiliate-links', isAdmin, async (req, res) => {
     try {
-      // In a real app, you would fetch affiliate links from the database
-      // For now, we'll create mock data
-      const links = [];
+      // In a real app, you would fetch affiliate links from a proper database
+      // For now, we'll create a static array of affiliate links if it doesn't exist
+      if (!storage.affiliateLinks) {
+        storage.affiliateLinks = new Map();
+        
+        // Add a sample affiliate link
+        storage.affiliateLinks.set(1, {
+          id: 1,
+          name: "Affiliate Link 1",
+          description: "Description for affiliate link 1",
+          code: `aff1${Math.random().toString(36).substring(2, 8)}`,
+          targetUrl: "https://example.com/product1",
+          commission: 10.5,
+          createdAt: new Date(),
+          isActive: true,
+          userId: req.user!.id
+        });
+        
+        // Initialize counters
+        storage.affiliateLinkId = 1;
+      }
       
-      // Generate 5 mock affiliate links
-      for (let i = 1; i <= 5; i++) {
-        links.push({
-          id: i,
-          name: `Affiliate Link ${i}`,
-          description: `Description for affiliate link ${i}`,
-          code: `aff${i}${Math.random().toString(36).substring(2, 8)}`,
-          targetUrl: `https://example.com/product${i}`,
-          commission: parseFloat((Math.random() * 10 + 5).toFixed(2)),
-          createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-          isActive: Math.random() > 0.2,
-          userId: req.user!.id,
+      // Get all affiliate links
+      const links = Array.from(storage.affiliateLinks.values()).map(link => {
+        // Add mock stats for each link (these would come from database in a real app)
+        return {
+          ...link,
           stats: {
             clicks: Math.floor(Math.random() * 500) + 50,
             uniqueClicks: Math.floor(Math.random() * 300) + 30,
             conversionRate: parseFloat((Math.random() * 5 + 1).toFixed(2)),
             revenue: parseFloat((Math.random() * 1000 + 100).toFixed(2))
           }
-        });
-      }
+        };
+      });
       
       return res.json({ links });
     } catch (error) {
       console.error('Failed to fetch affiliate links:', error);
       return res.status(500).json({ message: 'Failed to fetch affiliate links' });
+    }
+  });
+  
+  app.post('/api/admin/affiliate-links', isAdmin, async (req, res) => {
+    try {
+      const { name, description, targetUrl, code, commission, isActive } = req.body;
+      
+      if (!name || !targetUrl) {
+        return res.status(400).json({ message: 'Name and target URL are required' });
+      }
+      
+      // Initialize the affiliate links Map if it doesn't exist
+      if (!storage.affiliateLinks) {
+        storage.affiliateLinks = new Map();
+        storage.affiliateLinkId = 0;
+      }
+      
+      // Generate a new ID
+      const id = ++storage.affiliateLinkId;
+      
+      // Create the affiliate link
+      const newLink = {
+        id,
+        name,
+        description: description || "",
+        code: code || `aff${id}${Math.random().toString(36).substring(2, 8)}`,
+        targetUrl,
+        commission: commission ? parseFloat(commission) : 5.0,
+        createdAt: new Date(),
+        isActive: isActive !== undefined ? isActive : true,
+        userId: req.user!.id
+      };
+      
+      // Save the affiliate link
+      storage.affiliateLinks.set(id, newLink);
+      
+      return res.json(newLink);
+    } catch (error) {
+      console.error('Failed to create affiliate link:', error);
+      return res.status(500).json({ message: 'Failed to create affiliate link' });
+    }
+  });
+  
+  app.patch('/api/admin/affiliate-links/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid affiliate link ID' });
+      }
+      
+      // Check if the affiliate links Map exists
+      if (!storage.affiliateLinks) {
+        return res.status(404).json({ message: 'Affiliate link not found' });
+      }
+      
+      // Get the existing affiliate link
+      const link = storage.affiliateLinks.get(id);
+      if (!link) {
+        return res.status(404).json({ message: 'Affiliate link not found' });
+      }
+      
+      const { name, description, targetUrl, code, commission, isActive } = req.body;
+      
+      // Update the affiliate link
+      const updatedLink = {
+        ...link,
+        name: name !== undefined ? name : link.name,
+        description: description !== undefined ? description : link.description,
+        targetUrl: targetUrl !== undefined ? targetUrl : link.targetUrl,
+        code: code !== undefined ? code : link.code,
+        commission: commission !== undefined ? parseFloat(commission) : link.commission,
+        isActive: isActive !== undefined ? isActive : link.isActive
+      };
+      
+      // Save the updated affiliate link
+      storage.affiliateLinks.set(id, updatedLink);
+      
+      return res.json(updatedLink);
+    } catch (error) {
+      console.error('Failed to update affiliate link:', error);
+      return res.status(500).json({ message: 'Failed to update affiliate link' });
+    }
+  });
+  
+  app.delete('/api/admin/affiliate-links/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid affiliate link ID' });
+      }
+      
+      // Check if the affiliate links Map exists
+      if (!storage.affiliateLinks) {
+        return res.status(404).json({ message: 'Affiliate link not found' });
+      }
+      
+      // Check if the affiliate link exists
+      if (!storage.affiliateLinks.has(id)) {
+        return res.status(404).json({ message: 'Affiliate link not found' });
+      }
+      
+      // Delete the affiliate link
+      storage.affiliateLinks.delete(id);
+      
+      return res.json({ message: 'Affiliate link deleted successfully' });
+    } catch (error) {
+      console.error('Failed to delete affiliate link:', error);
+      return res.status(500).json({ message: 'Failed to delete affiliate link' });
     }
   });
 
