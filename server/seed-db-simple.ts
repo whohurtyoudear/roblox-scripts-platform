@@ -17,11 +17,11 @@ async function seedDatabase() {
     
     // Create admin user if it doesn't exist
     console.log('Creating admin user...');
-    const hashedPassword = await hashPassword('admin123');
+    const hashedPassword = await hashPassword('Admin123!');
     
     try {
       await db.insert(users).values({
-        username: 'admin',
+        username: 'adminuser',
         password: hashedPassword,
         email: 'admin@example.com',
         bio: 'System Administrator',
