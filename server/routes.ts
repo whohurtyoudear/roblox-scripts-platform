@@ -401,6 +401,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/admin/users/:id', isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid user ID' });
+      }
+
+      const { username, email, bio, avatarUrl } = req.body;
+      
+      // Create update data object
+      const updateData: any = {};
+      if (username !== undefined) updateData.username = username;
+      if (email !== undefined) updateData.email = email;
+      if (bio !== undefined) updateData.bio = bio;
+      if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
+      
+      // Update user
+      const updatedUser = await storage.updateUser(id, updateData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      return res.json({
+        message: 'User updated successfully',
+        user: { ...updatedUser, password: '[HIDDEN]' }
+      });
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      return res.status(500).json({ message: 'Failed to update user' });
+    }
+  });
+
   app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id, 10);

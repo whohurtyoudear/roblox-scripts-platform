@@ -106,6 +106,15 @@ export default function EnhancedUserManagement() {
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState('user');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  
+  // Edit user form state
+  const [editUserData, setEditUserData] = useState({
+    username: '',
+    email: '',
+    bio: '',
+    avatarUrl: ''
+  });
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   // Fetch users
   const { data, isLoading } = useQuery({
@@ -197,6 +206,28 @@ export default function EnhancedUserManagement() {
       toast({
         title: 'Error',
         description: `Failed to delete user: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Edit user mutation
+  const editUserMutation = useMutation({
+    mutationFn: async ({ userId, userData }: { userId: number, userData: Partial<UserType> }) => {
+      return apiRequest('PATCH', `/api/admin/users/${userId}`, userData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({
+        title: 'User updated',
+        description: `User ${selectedUser?.username}'s details have been updated.`,
+      });
+      setShowEditDialog(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: `Failed to update user: ${error.message}`,
         variant: 'destructive',
       });
     },
@@ -295,6 +326,18 @@ export default function EnhancedUserManagement() {
   const handleDeleteUser = (user: UserType) => {
     setSelectedUser(user);
     deleteUserMutation.mutate(user.id);
+  };
+  
+  // Open edit dialog
+  const openEditDialog = (user: UserType) => {
+    setSelectedUser(user);
+    setEditUserData({
+      username: user.username,
+      email: user.email || '',
+      bio: user.bio || '',
+      avatarUrl: user.avatarUrl || ''
+    });
+    setShowEditDialog(true);
   };
 
   // Render loading state
@@ -506,7 +549,7 @@ export default function EnhancedUserManagement() {
                           <DropdownMenuItem onClick={() => openRoleDialog(user)} className="gap-2">
                             <Shield className="h-4 w-4" /> Change Role
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2">
+                          <DropdownMenuItem onClick={() => openEditDialog(user)} className="gap-2">
                             <Edit className="h-4 w-4" /> Edit Details
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
