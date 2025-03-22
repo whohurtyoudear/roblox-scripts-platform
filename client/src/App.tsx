@@ -54,7 +54,8 @@ function Router() {
       <Route path="/:rest*">
         {(params) => {
           // Don't show ad banners on the auth page
-          if (params.rest === "auth") return null;
+          const path = window.location.pathname;
+          if (path.includes("/auth")) return null;
           
           return (
             <div className="container mx-auto px-4 pt-4">
