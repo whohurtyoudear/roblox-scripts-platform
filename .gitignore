@@ -41,6 +41,15 @@ Thumbs.db
 .tmp/
 tmp/
 
+# Database
+*.sqlite
+*.sqlite3
+*.db
+drizzle/migrations/.snapshot.json
+
+# Testing
+coverage/
+
 # Misc
 .vercel
-coverage
+uploads/
