@@ -46,7 +46,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: 'Failed to fetch scripts' });
     }
   });
+  
+  // API route for categories
+  app.get('/api/categories', async (req, res) => {
+    try {
+      const categories = await storage.getAllCategories();
+      return res.json(categories);
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to fetch categories' });
+    }
+  });
+  
+  // API route for tags
+  app.get('/api/tags', async (req, res) => {
+    try {
+      const tags = await storage.getAllTags();
+      return res.json(tags);
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to fetch tags' });
+    }
+  });
 
+  // API route for featured scripts
+  app.get('/api/scripts/featured', async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 5;
+      const featuredScripts = await storage.getFeaturedScripts(limit);
+      return res.json(featuredScripts);
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to fetch featured scripts' });
+    }
+  });
+  
+  // API route for trending scripts
+  app.get('/api/scripts/trending', async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 7;
+      const limit = parseInt(req.query.limit as string) || 5;
+      const trendingScripts = await storage.getTrendingScripts(days, limit);
+      return res.json(trendingScripts);
+    } catch (error) {
+      return res.status(500).json({ message: 'Failed to fetch trending scripts' });
+    }
+  });
+  
   app.get('/api/scripts/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id, 10);
