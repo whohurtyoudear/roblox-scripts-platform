@@ -143,8 +143,8 @@ const ScriptDetailModal = ({ script, onClose, showNotification, onDelete }: Scri
                 <MessageSquare className="h-4 w-4" /> Join Discord
               </a>
               
-              {/* Admin actions */}
-              {user?.isAdmin && (
+              {/* Admin/Moderator actions */}
+              {(user?.role === 'admin' || user?.role === 'moderator') && (
                 <div className="flex items-center gap-2 ml-4">
                   {confirmDelete ? (
                     <div className="flex items-center gap-2">
