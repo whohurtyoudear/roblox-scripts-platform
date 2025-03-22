@@ -15,9 +15,9 @@ try {
     throw new Error('DATABASE_URL environment variable is required');
   }
   
-  // Set connection options with proper handling for SSL
+  // Set connection options with required SSL for security
   const options = {
-    ssl: process.env.NODE_ENV === 'production', // Enable SSL in production
+    ssl: true, // Always enable SSL for security
     max: 10, // Maximum number of connections
     idle_timeout: 30, // Idle connection timeout in seconds
   };
@@ -32,8 +32,19 @@ try {
   console.error('Failed to connect to PostgreSQL database:', error);
   // Provide a fallback DB to prevent application crash
   // This allows the app to start even if DB connection fails
-  const queryClient = postgres('postgres://localhost:5432/postgres');
-  db = drizzle(queryClient, { schema });
+  try {
+    const fallbackOptions = {
+      ssl: false, // Fallback without SSL if necessary
+    };
+    const queryClient = postgres('postgres://localhost:5432/postgres', fallbackOptions);
+    db = drizzle(queryClient, { schema });
+    console.log('Using fallback database connection');
+  } catch (fallbackError) {
+    console.error('Failed to connect to fallback database:', fallbackError);
+    // Create an empty drizzle instance as a last resort
+    const emptyClient = postgres('postgres://localhost:5432/postgres', { ssl: false });
+    db = drizzle(emptyClient, { schema });
+  }
 }
 
 export { db };
